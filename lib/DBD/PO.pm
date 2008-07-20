@@ -11,7 +11,7 @@ use DBD::PO::Statement;
 use DBD::PO::Table;
 use DBD::PO::st;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 our $drh = ();       # holds driver handle once initialised
 our $err = 0;        # holds error code   for DBI::err
@@ -22,23 +22,17 @@ our $sqlstate = q{}; # holds error state  for DBI::state
 
 __END__
 
-=pod
-
-=head1 NAME
-
-Object::Lazy - create objects late from non-owned classes
-
-$HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
-
 =head1 NAME
 
 DBD::PO - DBI driver for PO files
 
+$Id: PO.pm 55 2008-07-20 15:48:59Z steffenw $
+
+$HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
+
 =head1 VERSION
 
 0.01
-
-svn: $Id: PO.pm 53 2008-07-20 12:20:22Z steffenw $
 
 =head1 SYNOPSIS
 
@@ -72,15 +66,45 @@ with '/', './' or '../' and they must not contain white space.
 
 Columns:
 
- - comment    -> translator comment text concatinated by 'separator'
- - automatic  -> automatic comment text concatinated by 'separator'
- - reference  -> where the text to translate is from, concatinated by 'separator'
- - obsolete   -> the translation is used (0) or not (1)
- - fuzzy      -> the translation is finished (0) or not (1)
- - c_format   -> format flag, not set (0), set (1) or negative set (-1)
- - php_format -> format flag, not set (0), set (1) or negative set (-1)
- - msgid      -> the text to translate (emty string for header)
- - msgstr     -> the translation
+=over 9
+
+=item * comment
+
+translator comment text concatinated by 'separator'
+
+=item * automatic
+
+automatic comment text concatinated by 'separator'
+
+=item * reference
+
+where the text to translate is from, concatinated by 'separator'
+
+=item * obsolete
+
+the translation is used (0) or not (1)
+
+=item * fuzzy
+
+the translation is finished (0) or not (1)
+
+=item * c_format (c-format, no-c-format)
+
+format flag, not set (0), set (1) or negative set (-1)
+
+=item * php_format (php-format, no-php-format)
+
+format flag, not set (0), set (1) or negative set (-1)
+
+=item * msgid
+
+the text to translate (emty string for header)
+
+=item * msgstr
+
+the translation
+
+=back
 
     $dbh->do(<<'EOT');
         CREATE TABLE
@@ -154,7 +178,7 @@ EOT
 Note the use of the quote method for escaping the word 'foobar'. Any
 string must be escaped, even if it doesn't contain binary data.
 
-    my $dbh->prepare(<<'EOT');
+    my $sth = $dbh->prepare(<<'EOT');
         INSERT INTO table.po (
             msgid,
             msgstr,
@@ -167,7 +191,7 @@ string must be escaped, even if it doesn't contain binary data.
             $separator,
             'text to translate',
             '2nd line of text',
-        );
+        ),
         join(
             $separator,
             'translation',
@@ -178,6 +202,41 @@ string must be escaped, even if it doesn't contain binary data.
             'my_program: 17',
             'my_program: 269',
         ),
+    );
+
+=head2 read a row
+
+    $sth = $dbh->prepare(<<'EOT');
+        SELECT msgstr
+        FROM   table.po
+        WHERE  msgid = ?
+    EOT
+
+    $sth->execute(
+        join(
+            $separator,
+            'text to translate',
+            '2nd line of text',
+        ),
+    );
+
+    my ($msgstr) = $sth->fetchrow_array();
+
+=head2 read the header
+
+    $sth->execute( q{} );
+
+    ($header_msgstr) = $sth->fetchrow_array();
+
+    my $header_struct = $dbh->func(
+        # optional
+        {
+            # optional parameters
+            eol       => $CRLF, # The example is the default value.
+            separator => $CRLF, # The example is the default value.
+        },
+        # function name
+        'split_header_msgstr',
     );
 
 =head2 update rows

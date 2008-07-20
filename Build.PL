@@ -6,6 +6,7 @@ use Module::Build;
 Module::Build->new(
     module_name        => 'DBD::PO',
     license            => 'perl',
+    dist_abstract      => 'DBD::PO - DBI driver for PO files',
     dist_author        => 'Steffen Winkler <steffenw@cpan.org>',
     dist_version_from  => 'lib/DBD/PO.pm',
     requires           => {

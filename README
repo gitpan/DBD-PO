@@ -1,5 +1,5 @@
-Bundle::DBD::PO version 0.01
-============================
+DBD::PO version 0.02
+====================
 
 This is a driver to read/write PO files.
 More about PO-Files see module Locale::PO or Locale::Maketext.
