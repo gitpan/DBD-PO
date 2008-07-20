@@ -1,0 +1,25 @@
+Build.PL
+Changes
+lib/DBD/PO.pm
+lib/DBD/PO/db.pm
+lib/DBD/PO/dr.pm
+lib/DBD/PO/Locale/PO.pm
+lib/DBD/PO/st.pm
+lib/DBD/PO/Statement.pm
+lib/DBD/PO/Table.pm
+lib/DBD/PO/Text/PO.pm
+MANIFEST			This list of files
+README
+t/01_build_table.t
+t/02_fill_table.t
+t/03_check_table.t
+t/04_change_table.t
+t/05_change_flags.t
+t/06_obsolete.t
+t/07_split_header_msgstr.t
+t/08_destroy_table.t
+t/11_crash.t
+t/98_pod.t
+t/99_pod_coverage.t
+Makefile.PL
+META.yml
