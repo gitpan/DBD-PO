@@ -1,5 +1,6 @@
 Build.PL
 Changes
+DBD-PO.ppd
 lib/DBD/PO.pm
 lib/DBD/PO/db.pm
 lib/DBD/PO/dr.pm
@@ -21,5 +22,6 @@ t/08_destroy_table.t
 t/11_crash.t
 t/98_pod.t
 t/99_pod_coverage.t
+t/lib/DBD_PO_Test_Defaults.pm
 Makefile.PL
 META.yml

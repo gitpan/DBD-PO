@@ -7,7 +7,6 @@ use DBD::File;
 use parent qw(-norequire DBD::File::Statement);
 
 use DBD::PO::Text::PO;
-use Socket qw($CRLF);
 
 sub open_table {
     my($self, $data, $table, $createMode, $lockMode) = @_;
@@ -20,18 +19,26 @@ sub open_table {
     my $meta = $tables->{$table} || {};
     my $po = $meta->{po} || $dbh->{po_po};
     if (! $po) {
+        @{ $dbh->FETCH('f_valid_attrs') }{qw(po_eol po_separator po_charset)} = (1) x 3;
         my $class = $meta->{class}
-                    || $dbh->{'po_class'}
+                    || $dbh->{po_class}
                     || 'DBD::PO::Text::PO';
         my %opts = (
-            eol       => $meta->{'eol'}
-                         || $dbh->{'po_eol'}
-                         || $CRLF,
+            eol       => exists $meta->{eol}
+                         ? $meta->{eol}
+                         : exists $dbh->{po_eol}
+                           ? $dbh->{po_eol}
+                           : $DBD::PO::dr::EOL_DEFAULT,
             separator => exists $meta->{separator}
                          ? $meta->{separator}
                          : exists $dbh->{po_separator}
                            ? $dbh->{po_separator}
-                           : $CRLF,
+                           : $DBD::PO::dr::SEPARATOR_DEFAULT,
+            charset   => exists $meta->{charset}
+                         ? $meta->{charset}
+                         : exists $dbh->{po_charset}
+                           ? $dbh->{po_charset}
+                           : $DBD::PO::dr::CHARSET_DEFAULT,
         );
         $po = $meta->{po}
             = $class->new(\%opts);

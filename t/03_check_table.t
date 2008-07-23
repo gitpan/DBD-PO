@@ -3,8 +3,8 @@
 use strict;
 use warnings;
 
-#use Carp qw(confess); $SIG{__DIE__} = \&confess;
-use Socket qw($CRLF);
+use lib qw(./t/lib);
+use DBD_PO_Test_Defaults;
 
 use Test::More tests => 8;
 my $module = 'Test::Differences';
@@ -17,14 +17,12 @@ BEGIN {
     use_ok('DBI');
 }
 
-my $table = 'po_test.po';
 my $dbh;
-my $separator = $CRLF;
 
 # connext
 {
     $dbh = DBI->connect(
-        'dbi:PO:',
+        "dbi:PO:f_dir=$DBD_PO_Test_Defaults::PATH",
         undef,
         undef,
         {
@@ -35,8 +33,8 @@ my $separator = $CRLF;
     );
     isa_ok($dbh, 'DBI::db', 'connect');
 
-    if (1) {
-        open my $file, '>', 'trace_03.txt';
+    if ($DBD_PO_Test_Defaults::TRACE) {
+        open my $file, '>', DBD_PO_Test_Defaults::trace_file_name();
         $dbh->trace(4, $file);
     }
 }
@@ -45,15 +43,15 @@ my $separator = $CRLF;
 {
     my $sth = $dbh->prepare(<<"EO_SQL");
         SELECT msgid, msgstr
-        FROM   $table
+        FROM   $DBD_PO_Test_Defaults::TABLE_0X
         WHERE  msgid=?
 EO_SQL
     isa_ok($sth, 'DBI::st');
 
     my @data = (
         {
-        	   id      => 'id_2',
-        	   _id     => 'id_2',
+               id      => 'id_2',
+               _id     => 'id_2',
             result => 1,
             fetch  => [
                 {
@@ -63,13 +61,13 @@ EO_SQL
             ],
         },
         {
-            id     => "id_value1${separator}id_value2",
+            id     => "id_value1${DBD_PO_Test_Defaults::SEPARATOR}id_value2",
             _id    => "id_value1\${separator}id_value2",
             result => 1,
             fetch  => [
                 {
-                    msgid  => "id_value1${separator}id_value2",
-                    msgstr => "str_value1${separator}str_value2",
+                    msgid  => "id_value1${DBD_PO_Test_Defaults::SEPARATOR}id_value2",
+                    msgstr => "str_value1${DBD_PO_Test_Defaults::SEPARATOR}str_value2",
                 },
             ],
         },
@@ -136,9 +134,9 @@ msgid "id_2"
 msgstr "str_2"
 
 EOT
-    open my $file, '<:raw', $table or die $!;
+    open my $file, '<:raw', $DBD_PO_Test_Defaults::FILE_0X or die $!;
     local $/ = ();
     my $content = <$file>;
-    $po =~ s{\n}{$CRLF}xmsg;
+    $po =~ s{\n}{$DBD_PO_Test_Defaults::EOL}xmsg;
     eq_or_diff($content, $po, 'check po file');
 }

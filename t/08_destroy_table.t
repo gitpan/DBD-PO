@@ -3,20 +3,21 @@
 use strict;
 use warnings;
 
-#use Carp qw(confess); $SIG{__DIE__} = \&confess;
+use lib qw(./t/lib);
+use DBD_PO_Test_Defaults;
+
 use Test::More tests => 4;
 
 BEGIN {
     use_ok('DBI');
 }
 
-my $table = 'po_test.po';
 my $dbh;
 
 # connext
 {
     $dbh = DBI->connect(
-        'dbi:PO:',
+        "dbi:PO:f_dir=$DBD_PO_Test_Defaults::PATH",
         undef,
         undef,
         {
@@ -27,8 +28,8 @@ my $dbh;
     );
     isa_ok($dbh, 'DBI::db', 'connect');
 
-    if (1) {
-        open my $file, '>', 'trace_07.txt';
+    if ($DBD_PO_Test_Defaults::TRACE) {
+        open my $file, '>', DBD_PO_Test_Defaults::trace_file_name();
         $dbh->trace(4, $file);
     }
 }
@@ -36,8 +37,8 @@ my $dbh;
 # destroy table
 {
     my $result = $dbh->do(<<"EO_SQL");
-        DROP TABLE $table
+        DROP TABLE $DBD_PO_Test_Defaults::TABLE_0X
 EO_SQL
     is($result, '-1', 'drop table');
-    ok(! -e $table, 'table file deleted');
+    ok(! -e $DBD_PO_Test_Defaults::FILE_0X, 'table file deleted');
 }

@@ -12,6 +12,7 @@ Module::Build->new(
     requires           => {
         parent             => 0,
         DBI                => 0, # for DBD::File
+        'SQL::Statement'   => 0, # for SQL::Parser
         'Params::Validate' => 0,
         Readonly           => 0,
         # Carp             => 0, # perl dist
@@ -20,6 +21,7 @@ Module::Build->new(
     build_requires => {
         'Test::Simple'       => 0, # for Test::More
         # 'Test::Differences => 0, # optional (test output is more readable)
+        # Cwd                => 0, #perl dist                  
     },
     create_makefile_pl   => 'traditional',
     recursive_test_files => 1,

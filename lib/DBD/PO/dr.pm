@@ -6,8 +6,8 @@ use warnings;
 use DBD::File;
 use parent qw(-norequire DBD::File::dr);
 
+use Socket qw($LF $CRLF);
 use Readonly qw(Readonly);
-use Params::Validate qw(:all);
 
 Readonly my $PV => 0;
 Readonly my $IV => 1;
@@ -43,6 +43,10 @@ sub connect ($$;$$$) {
 
     return $dbh;
 }
+
+Readonly our $SEPARATOR_DEFAULT => $LF;
+Readonly our $EOL_DEFAULT       => $CRLF;
+Readonly our $CHARSET_DEFAULT   => 'utf-8';
 
 my @cols = (
     [ qw( msgid      -msgid      msgid      ) ],

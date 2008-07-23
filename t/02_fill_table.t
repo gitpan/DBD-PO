@@ -3,8 +3,8 @@
 use strict;
 use warnings;
 
-#use Carp qw(confess); $SIG{__DIE__} = \&confess;
-use Socket qw($CRLF);
+use lib qw(./t/lib);
+use DBD_PO_Test_Defaults;
 
 use Test::More tests => 10;
 my $module = 'Test::Differences';
@@ -17,14 +17,12 @@ BEGIN {
     use_ok('DBI');
 }
 
-my $table = 'po_test.po';
 my ($dbh, $sth);
-my $separator = $CRLF;
 
 # connext
 {
     $dbh = DBI->connect(
-        "dbi:PO:separator=$CRLF",
+        "dbi:PO:f_dir=$DBD_PO_Test_Defaults::PATH",
         undef,
         undef,
         {
@@ -35,8 +33,8 @@ my $separator = $CRLF;
     );
     isa_ok($dbh, 'DBI::db', 'connect');
 
-    if (1) {
-        open my $file, '>', 'trace_02.txt';
+    if ($DBD_PO_Test_Defaults::TRACE) {
+        open my $file, '>', DBD_PO_Test_Defaults::trace_file_name();
         $dbh->trace(4, $file);
     }
 }
@@ -44,7 +42,7 @@ my $separator = $CRLF;
 # full row
 {
     $sth = $dbh->prepare(<<"EO_SQL");
-        INSERT INTO $table (
+        INSERT INTO $DBD_PO_Test_Defaults::TABLE_0X (
             msgid,
             msgstr,
             reference,
@@ -67,11 +65,11 @@ EO_SQL
 # full row, all are arrays
 {
     my $result = $sth->execute(
-        "id_value1${separator}id_value2",
-        "str_value1${separator}str_value2",
-        "ref_value1${separator}ref_value2",
-        "comment_value1${separator}comment_value2",
-        "automatic_value1${separator}automatic_value2",
+        "id_value1${DBD_PO_Test_Defaults::SEPARATOR}id_value2",
+        "str_value1${DBD_PO_Test_Defaults::SEPARATOR}str_value2",
+        "ref_value1${DBD_PO_Test_Defaults::SEPARATOR}ref_value2",
+        "comment_value1${DBD_PO_Test_Defaults::SEPARATOR}comment_value2",
+        "automatic_value1${DBD_PO_Test_Defaults::SEPARATOR}automatic_value2",
     );
     is($result, 1, "insert full row, all are arrays");
 }
@@ -79,7 +77,7 @@ EO_SQL
 # minimized row
 {
     my $result = $dbh->do(<<"EO_SQL", undef, 'id_value_mini');
-        INSERT INTO $table (msgid) VALUES (?)
+        INSERT INTO $DBD_PO_Test_Defaults::TABLE_0X (msgid) VALUES (?)
 EO_SQL
     is($result, 1, "insert minimized row");
 }
@@ -87,7 +85,7 @@ EO_SQL
 # typical rows
 {
     $sth = $dbh->prepare(<<"EO_SQL");
-        INSERT INTO $table (msgid, msgstr) VALUES (?, ?)
+        INSERT INTO $DBD_PO_Test_Defaults::TABLE_0X (msgid, msgstr) VALUES (?, ?)
 EO_SQL
     isa_ok($sth, 'DBI::st', 'prepare insert');
 
@@ -145,9 +143,9 @@ msgid "id_2"
 msgstr "str_2"
 
 EOT
-    open my $file, '<:raw', $table or die $!;
+    open my $file, '<:raw', $DBD_PO_Test_Defaults::FILE_0X or die $!;
     local $/ = ();
     my $content = <$file>;
-    $po =~ s{\n}{$CRLF}xmsg;
+    $po =~ s{\n}{$DBD_PO_Test_Defaults::EOL}xmsg;
     eq_or_diff($content, $po, 'check po file');
 }

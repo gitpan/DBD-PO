@@ -6,13 +6,6 @@ use warnings;
 use Carp qw(croak);
 use Params::Validate qw(:all);
 use DBD::PO::Locale::PO;
-use Socket qw($CRLF);
-
-my $define_array = sub {
-    return map {
-        defined $_ ? $_ : q{};
-    } @_;
-};
 
 my $array_from_anything = sub {
     my ($self, $anything) = @_;
@@ -37,8 +30,9 @@ sub new {
     $options = validate_with(
         params => $options,
         spec => {
-            eol       => $CRLF,
-            separator => $CRLF,
+            eol       => {default => $DBD::PO::dr::EOL_DEFAULT},
+            separator => {default => $DBD::PO::dr::SEPARATOR_DEFAULT},
+            charset   => {default => $DBD::PO::dr::CHARSET_DEFAULT},
         },
         called => "2nd parameter of new('$class', \$parameter)",
     );
@@ -54,6 +48,8 @@ sub print {
         {type => ARRAYREF},
     );
 
+    $file->binmode(":encoding($self->{charset})")
+        or croak "binmode: $!";
     my %line;
     for my $index (0 .. $#DBD::PO::dr::COL_NAMES) {
         my $parameter = $DBD::PO::dr::COL_PARAMETERS[$index];
@@ -63,7 +59,7 @@ sub print {
            || $parameter eq '-automatic'
            || $parameter eq '-reference'
         ) {
-            if (defined $values && @{$values}) {
+            if (@{$values}) {
                 $line{$parameter} = join $self->{eol}, @{$values};
             }
         }
@@ -94,7 +90,7 @@ sub print {
             }
         }
         else {
-            if (defined $values && @{$values}) {
+            if (@{$values}) {
                 $line{$parameter} = join "\\n", @{$values};
             }
         }
@@ -120,6 +116,8 @@ sub getline {
         {isa => 'IO::File'},
     );
 
+    $file->binmode(":encoding($self->{charset})")
+        or croak "binmode: $!";
     if (! $self->{po_iterator}) {
         $self->{po_iterator}
             = DBD::PO::Locale::PO->load_file_asarray($file, $self->{eol});
@@ -136,6 +134,16 @@ sub getline {
     METHOD:
     for my $method (@DBD::PO::dr::COL_METHODS) {
         if (
+           $method eq 'comment'
+           || $method eq 'automatic'
+           || $method eq 'reference'
+        ) {
+            $cols[$index]
+                = join  $self->{separator},
+                  split m{\Q$self->{eol}\E}xms,
+                        $po->dequote( $po->$method() );
+        }
+        elsif (
             $method eq 'obsolete'
             || $method eq 'fuzzy'
         ) {
@@ -158,9 +166,9 @@ sub getline {
         }
         else {
             $cols[$index]
-                = join $self->{separator},
+                = join  $self->{separator},
                   split m{\\n}xms,
-                       $po->dequote( $po->$method() );
+                        $po->dequote( $po->$method() );
         }
         ++$index;
     }

@@ -3,8 +3,8 @@
 use strict;
 use warnings;
 
-#use Carp qw(confess); $SIG{__DIE__} = \&confess;
-use Socket qw($CRLF);
+use lib qw(./t/lib);
+use DBD_PO_Test_Defaults;
 
 use Test::More tests => 6;
 my $module = 'Test::Differences';
@@ -17,11 +17,8 @@ BEGIN {
     use_ok('DBI');
 }
 
-my $table     = 'po_test.po';
-my $separator = $CRLF;
-
 my $dbh = DBI->connect(
-    'dbi:PO:',
+    "dbi:PO:f_dir=$DBD_PO_Test_Defaults::PATH;po_eol=\x0D\x0A;po_separator=\x0A;po_charset=utf-8",
     undef,
     undef,
     {
@@ -32,13 +29,13 @@ my $dbh = DBI->connect(
 );
 isa_ok($dbh, 'DBI::db', 'connect');
 
-if (1) {
-    open my $file, '>', 'trace_01.txt';
+if ($DBD_PO_Test_Defaults::TRACE) {
+    open my $file, '>', DBD_PO_Test_Defaults::trace_file_name();
     $dbh->trace(4, $file);
 }
 
 my $result = $dbh->do(<<"EO_SQL");
-    CREATE TABLE $table (
+    CREATE TABLE $DBD_PO_Test_Defaults::TABLE_0X (
         comment    VARCHAR,
         automatic  VARCHAR,
         reference  VARCHAR,
@@ -51,11 +48,11 @@ my $result = $dbh->do(<<"EO_SQL");
     )
 EO_SQL
 is($result, '0E0', 'create table');
-ok(-e $table, 'table file found');
+ok(-e $DBD_PO_Test_Defaults::TABLE_0X, 'table file found');
 
 my @parameters = (
     join(
-        $separator,
+        $DBD_PO_Test_Defaults::SEPARATOR,
         qw(
             comment1
             comment2
@@ -87,7 +84,7 @@ my @parameters = (
     ),
 );
 $result = $dbh->do(<<"EO_SQL", undef, @parameters);
-    INSERT INTO $table (
+    INSERT INTO $DBD_PO_Test_Defaults::TABLE_0X (
         comment,
         msgstr
     ) VALUES (?, ?)
@@ -114,9 +111,9 @@ msgstr ""
 "X-Poedit-SourceCharset: utf-8"
 
 EOT
-    open my $file, '<:raw', $table or die $!;
+    open my $file, '<:raw', $DBD_PO_Test_Defaults::FILE_0X or die $!;
     local $/ = ();
     my $content = <$file>;
-    $po =~ s{\n}{$CRLF}xmsg;
+    $po =~ s{\n}{$DBD_PO_Test_Defaults::EOL}xmsg;
     eq_or_diff($content, $po, 'check po file');
 }

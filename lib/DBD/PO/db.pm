@@ -7,7 +7,8 @@ use DBD::File;
 use parent qw(-norequire DBD::File::db);
 
 use Carp qw(croak);
-use Socket qw($CRLF);
+use SQL::Statement; # for SQL::Parser
+use SQL::Parser;
 use DBD::PO::Locale::PO;
 
 our $imp_data_size = 0;
@@ -16,14 +17,14 @@ sub csv_cache_sql_parser_object {
     my $dbh = shift;
 
     my $parser = {
-        dialect    => 'PO',
+        dialect    => 'CSV',
         RaiseError => $dbh->FETCH('RaiseError'),
         PrintError => $dbh->FETCH('PrintError'),
     };
-    my $sql_flags  = $dbh->FETCH('po_sql') || {};
+    my $sql_flags  = $dbh->FETCH('csv_sql') || {};
     @{$parser}{ keys %{$sql_flags} } = values %{$sql_flags};
     $parser = SQL::Parser->new($parser->{dialect}, $parser);
-    $dbh->{po_sql_parser_object} = $parser;
+    $dbh->{csv_sql_parser_object} = $parser;
 
     return $parser;
 }
@@ -69,9 +70,9 @@ sub split_header_msgstr {
     my ($dbh, $msgstr, $params) = @_;
 
     my $po = DBD::PO::Locale::PO->new(
-        eol => $params->{eol} || $CRLF,
+        eol => $params->{eol} || $DBD::PO::dr::EOL_DEFAULT,
     );
-    my $separator = $params->{separator} || $CRLF;
+    my $separator = $params->{separator} || $DBD::PO::dr::SEPARATOR_DEFAULT;
     my @cols;
     my $index = 0;
     my @lines = split m{\Q$separator\E}xms, $msgstr;

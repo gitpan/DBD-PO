@@ -11,7 +11,7 @@ use DBD::PO::Statement;
 use DBD::PO::Table;
 use DBD::PO::st;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 our $drh = ();       # holds driver handle once initialised
 our $err = 0;        # holds error code   for DBI::err
@@ -26,7 +26,7 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 55 2008-07-20 15:48:59Z steffenw $
+$Id: PO.pm 65 2008-07-23 11:42:42Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
@@ -41,11 +41,21 @@ $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD
     use DBI;
 
     $dbh = DBI->connect(
-        'DBI:PO:',           # The default database is the current directory.
-                             # The default 'eol' (end of line) for the po-file
-                             # is network typical like 'use Socket qw($CRLF)'.
-                             # The default 'separator' to set/get concatinated
-                             # data is $CRLF too, will changed to "\n".
+        "DBI:PO:f_dir=dir_x;po_separator=\n;po_eol=$LF;po_charset=utf-8",
+                             # optional 'f_dir':
+                             #  The default database is './',
+                             #  here set to the directory 'dir_x'.
+                             # optional 'po_separator':
+                             #  The default 'po_separator' to set/get
+                             #  concatinated data is "\n",
+                             #  here set to "\n" too.
+                             # optional 'po_eol':
+                             #  The default 'po_eol' (po end of line)
+                             #  is network typical like 'use Socket qw($CRLF)',
+                             #  here set to $LF like 'use Socket qw($LF)'.
+                             # optional 'po_charset':
+                             #  The default 'po_charset' is 'utf-8',
+                             #  here set to 'utf-8'.
         undef,               # Username is not used.
         undef,               # Password is not used.
         { RaiseError => 1 }, # The easy way to handle exception.
@@ -299,6 +309,8 @@ Socket
 parent
 
 DBI
+
+L<SQL::Statement>
 
 L<Params::Validate>
 

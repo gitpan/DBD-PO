@@ -550,10 +550,11 @@ __END__
 
 DBD::PO::Locale::PO - Perl module for manipulating .po entries from GNU gettext
 
-The module L<Locale::PO> was copied and modified for module DBD::PO::Text::PO.
-The module DBD::PO::Text::PO based on module DBD::PO::Text::PO.
+The module L<Locale::PO>, version 0.21 was copied and modified
+for module DBD::PO::Text::PO.
+The module DBD::PO based on module DBD::PO::Text::PO.
 
-Read the origninal POD after this sentence.
+Read the original POD after this sentence.
 
 =head1 original NAME
 
