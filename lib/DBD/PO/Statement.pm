@@ -6,6 +6,7 @@ use warnings;
 use DBD::File;
 use parent qw(-norequire DBD::File::Statement);
 
+use Carp qw(croak);
 use DBD::PO::Text::PO;
 
 sub open_table {
@@ -80,7 +81,7 @@ sub open_table {
             if ($skipRows--) {
 #                if (! ($array = $tbl->fetch_row($data))) {
                 if (! ($array = \@DBD::PO::dr::COL_NAMES)) {
-                    die "Missing header";
+                    croak 'Missing header';
                 }
                 $tbl->{col_names} = $array;
                 while ($skipRows--) {

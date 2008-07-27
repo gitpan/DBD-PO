@@ -92,11 +92,29 @@ sub print {
         else {
             if (@{$values}) {
                 $line{$parameter} = join "\\n", @{$values};
+                if (! $file->tell()) {
+                    if ($parameter eq '-msgid') {
+                        croak 'A header has no msgid';
+                    }
+                    else { # -msgstr
+                        if ($line{$parameter} !~ m{\b charset =}xms) {
+                            croak 'This can not be a header';
+                        }
+                    }
+                }
+            }
+            else {
+                if ($parameter eq '-msgid' && $file->tell()) {
+                    croak 'A line has to have a msgid';
+                }
+                elsif ($parameter eq '-msgstr' && ! $file->tell()) {
+                    croak 'A header has to have a msgstr';
+                }
             }
         }
         ++$index;
     }
-    my $line =DBD::PO::Locale::PO->new(
+    my $line = DBD::PO::Locale::PO->new(
         eol       => $self->{eol},
         '-msgid'  => q{},
         '-msgstr' => q{},

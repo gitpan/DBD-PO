@@ -11,7 +11,7 @@ use DBD::PO::Statement;
 use DBD::PO::Table;
 use DBD::PO::st;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 our $drh = ();       # holds driver handle once initialised
 our $err = 0;        # holds error code   for DBI::err
@@ -26,7 +26,7 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 65 2008-07-23 11:42:42Z steffenw $
+$Id: PO.pm 80 2008-07-26 17:25:03Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
@@ -39,26 +39,27 @@ $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD
 =head2 connect
 
     use DBI;
+    use Socket qw($LF);
 
     $dbh = DBI->connect(
-        "DBI:PO:f_dir=dir_x;po_separator=\n;po_eol=$LF;po_charset=utf-8",
-                             # optional 'f_dir':
-                             #  The default database is './',
-                             #  here set to the directory 'dir_x'.
-                             # optional 'po_separator':
-                             #  The default 'po_separator' to set/get
-                             #  concatinated data is "\n",
-                             #  here set to "\n" too.
-                             # optional 'po_eol':
-                             #  The default 'po_eol' (po end of line)
-                             #  is network typical like 'use Socket qw($CRLF)',
-                             #  here set to $LF like 'use Socket qw($LF)'.
-                             # optional 'po_charset':
-                             #  The default 'po_charset' is 'utf-8',
-                             #  here set to 'utf-8'.
-        undef,               # Username is not used.
-        undef,               # Password is not used.
-        { RaiseError => 1 }, # The easy way to handle exception.
+        'DBI:PO:'
+        . 'f_dir=dir_x;'      # optional:
+                              #  The default database is './',
+                              #  here set to the directory 'dir_x'.
+        . "po_separator=\n;"  # optional:
+                              #  The default 'po_separator' to set/get
+                              #  concatinated data is "\n",
+                              #  here set to "\n" unnecessary.
+        . "po_eol=$LF;"       # optional:
+                              #  The default 'po_eol' (po end of line)
+                              #  is network typical like 'use Socket qw($CRLF)',
+                              #  here set to $LF like 'use Socket qw($LF)'.
+        . 'po_charset=utf-8', # optional:
+                              #  The default 'po_charset' is 'utf-8',
+                              #  here set to 'utf-8' unnecessary.
+        undef,                # Username is not used.
+        undef,                # Password is not used.
+        { RaiseError => 1 },  # The easy way to handle exceptions.
     ) or die 'Cannot connect: ' . $DBI->errstr();
 
 =head2 create table
@@ -73,6 +74,8 @@ I recommend that table names are valid SQL identifiers: The first
 character is alphabetic, followed by an arbitrary number of alphanumeric
 characters. If you want to use other files, the file names must start
 with '/', './' or '../' and they must not contain white space.
+
+For conditional execution use CREATE TABLE IF EXISTS statement.
 
 Columns:
 
@@ -133,16 +136,20 @@ the translation
 
 =head2 write the header
 
-    use Socket qw($CRLF);
-    my $separator = $CRLF;
+=head3 build msgstr
 
-    my $header_comment = join(
-        $separator,
-        qw(
-            This is a translator comment for the header.
-            And this is line 2 of.
-        ),
+Minimized example:
+
+The charset will set to the 'po_charset' given at the connect method
+or to the default 'utf-8'.
+
+    my $header_msgstr = $dbh->func(
+        undef,
+        # function name
+        'build_header_msgstr',
     );
+
+Full example:
 
     my $header_msgstr = $dbh->func(
         [
@@ -163,7 +170,8 @@ the translation
             ],
             # undef to accept the defaut settings
             undef, # mime version (1.0)
-            undef, # content type text/plain) and charset (utf-8)
+            undef, # content type (text/plain)
+                   # and charset 'utf-8' or given at the connect method)
             undef, # content transfer encoding (8bit)
             # place here pairs for extra parameters
             [qw(
@@ -174,6 +182,19 @@ the translation
         ],
         # function name
         'build_header_msgstr',
+    );
+
+=head2 write header row
+
+Write the header row always at first!
+
+    use Socket qw($CRLF);
+    my $separator = $CRLF;
+
+    my $header_comment = join(
+        $separator,
+        'This is a translator comment for the header.',
+        'And this is line 2 of.',
     );
 
     $dbh->do(<<'EOT', undef, $header_comment, $header_msgstr);
@@ -214,6 +235,18 @@ string must be escaped, even if it doesn't contain binary data.
         ),
     );
 
+=head2 read the header
+
+    $sth = $dbh->prepare(<<'EOT');
+        SELECT msgstr
+        FROM   table.po
+        WHERE  msgid = ''
+    EOT
+
+    $sth->execute();
+
+    ($header_msgstr) = $sth->fetchrow_array();
+
 =head2 read a row
 
     $sth = $dbh->prepare(<<'EOT');
@@ -232,19 +265,10 @@ string must be escaped, even if it doesn't contain binary data.
 
     my ($msgstr) = $sth->fetchrow_array();
 
-=head2 read the header
-
-    $sth->execute( q{} );
-
-    ($header_msgstr) = $sth->fetchrow_array();
+=head3 extract the header data
 
     my $header_struct = $dbh->func(
-        # optional
-        {
-            # optional parameters
-            eol       => $CRLF, # The example is the default value.
-            separator => $CRLF, # The example is the default value.
-        },
+        $header_msgstr,
         # function name
         'split_header_msgstr',
     );
@@ -266,6 +290,8 @@ string must be escaped, even if it doesn't contain binary data.
     EOT
 
 =head2 drop table
+
+For conditional execution use DROP TABLE IF EXISTS statement.
 
     $dbh->do(<<'EOT');
         DROP TABLE table.po
@@ -313,8 +339,6 @@ DBI
 L<SQL::Statement>
 
 L<Params::Validate>
-
-Readonly
 
 =head2 Prerequisites
 

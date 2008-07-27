@@ -352,7 +352,7 @@ sub load_file_asarray {
         $self->_load_file($file, $file, $eol, 0);
     }
     else {
-        open my $in, '<', $file or return die $!;
+        open my $in, '<', $file or return $!;
         $self->_load_file($file, $in, $eol, 0);
         close $in;
     }
@@ -367,7 +367,7 @@ sub load_file_ashash {
         $self->_load_file($file, $file, $eol, 1);
     }
     else {
-        open my $in, '<', $file or return die $!;
+        open my $in, '<', $file or return $!;
         $self->_load_file($file, $in, $eol, 1);
         close $in;
     }

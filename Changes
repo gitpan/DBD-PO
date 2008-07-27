@@ -1,5 +1,11 @@
 Revision history for Perl extension DBD::PO.
 
+0.04  Sun Jul 27 12:00:00 2008
+- 4rd developer test version
+- fixed any problems with charset
+- changed API of method DBD::PO::db::split_header_msgstr
+- crash test and error message for mixed headers and lines 
+
 0.03  Wed Jul 23 19:00:00 2008
 - 3rd developer test version
 - fixed any problems of taint mode

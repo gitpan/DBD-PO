@@ -13,22 +13,6 @@ use DBD::PO::Locale::PO;
 
 our $imp_data_size = 0;
 
-sub csv_cache_sql_parser_object {
-    my $dbh = shift;
-
-    my $parser = {
-        dialect    => 'CSV',
-        RaiseError => $dbh->FETCH('RaiseError'),
-        PrintError => $dbh->FETCH('PrintError'),
-    };
-    my $sql_flags  = $dbh->FETCH('csv_sql') || {};
-    @{$parser}{ keys %{$sql_flags} } = values %{$sql_flags};
-    $parser = SQL::Parser->new($parser->{dialect}, $parser);
-    $dbh->{csv_sql_parser_object} = $parser;
-
-    return $parser;
-}
-
 sub build_header_msgstr {
     my ($dbh, $data) = @_;
 
@@ -48,6 +32,14 @@ sub build_header_msgstr {
                        : $data
                    )
                    : ();
+        if ($key eq 'content_type') {
+            my $charset = defined $dbh->FETCH('charset')
+                          ? $dbh->FETCH('charset')
+                          : $DBD::PO::dr::CHARSET_DEFAULT;
+            if ($charset) {
+                $data[1] = $charset;
+            }
+        }
         @data
             or next HEADER_KEY;
         if ($key eq 'extended') {
@@ -67,12 +59,16 @@ sub build_header_msgstr {
 }
 
 sub split_header_msgstr {
-    my ($dbh, $msgstr, $params) = @_;
+    my ($dbh, $msgstr) = @_;
 
     my $po = DBD::PO::Locale::PO->new(
-        eol => $params->{eol} || $DBD::PO::dr::EOL_DEFAULT,
+        eol => defined $dbh->FETCH('eol')
+               ? $dbh->FETCH('eol')
+               : $DBD::PO::dr::EOL_DEFAULT,
     );
-    my $separator = $params->{separator} || $DBD::PO::dr::SEPARATOR_DEFAULT;
+    my $separator = defined $dbh->FETCH('separator')
+                    ? $dbh->FETCH('separator')
+                    : $DBD::PO::dr::SEPARATOR_DEFAULT;
     my @cols;
     my $index = 0;
     my @lines = split m{\Q$separator\E}xms, $msgstr;
@@ -117,8 +113,6 @@ sub split_header_msgstr {
 __END__
 
 =head1 SUBROUTINES/METHODS
-
-=head2 method csv_cache_sql_parser_object
 
 =head2 method build_header_msgstr
 

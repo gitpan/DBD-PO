@@ -7,11 +7,10 @@ use DBD::File;
 use parent qw(-norequire DBD::File::dr);
 
 use Socket qw($LF $CRLF);
-use Readonly qw(Readonly);
 
-Readonly my $PV => 0;
-Readonly my $IV => 1;
-Readonly my $NV => 2;
+my $PV = 0;
+my $IV = 1;
+my $NV = 2;
 
 our @PO_TYPES = (
     $IV, # SQL_TINYINT
@@ -44,9 +43,9 @@ sub connect ($$;$$$) {
     return $dbh;
 }
 
-Readonly our $SEPARATOR_DEFAULT => $LF;
-Readonly our $EOL_DEFAULT       => $CRLF;
-Readonly our $CHARSET_DEFAULT   => 'utf-8';
+our $SEPARATOR_DEFAULT = $LF;
+our $EOL_DEFAULT       = $CRLF;
+our $CHARSET_DEFAULT   = 'utf-8';
 
 my @cols = (
     [ qw( msgid      -msgid      msgid      ) ],
@@ -64,19 +63,29 @@ our @COL_PARAMETERS  = map {$_->[1]} @cols;
 our @COL_METHODS     = map {$_->[2]} @cols;
 
 my @header = (
-    [ project_id_version        => 'Project-Id-Version: %s',                               ],
-    [ pot_creation_date         => 'POT-Creation-Date: %s',                                ],
-    [ po_revision_date          => 'PO-Revision-Date: %s',                                 ],
-    [ last_translator           => 'Last-Translator: %s <%s>',                             ],
-    [ language_team             => 'Language-Team: %s <%s>',                               ],
-    [ mime_version              => 'MIME-Version: %s',              '1.0'                  ],
-    [ content_type              => 'Content-Type: %s; charset=%s', ['text/plain', 'utf-8'] ],
-    [ content_transfer_encoding => 'Content-Transfer-Encoding: %s', '8bit'                 ],
-    [ extended                  => '%s: %s',                                               ],
+    [ project_id_version        => 'Project-Id-Version: %s'        ],
+    [ pot_creation_date         => 'POT-Creation-Date: %s'         ],
+    [ po_revision_date          => 'PO-Revision-Date: %s'          ],
+    [ last_translator           => 'Last-Translator: %s <%s>'      ],
+    [ language_team             => 'Language-Team: %s <%s>'        ],
+    [ mime_version              => 'MIME-Version: %s'              ],
+    [ content_type              => 'Content-Type: %s; charset=%s'  ],
+    [ content_transfer_encoding => 'Content-Transfer-Encoding: %s' ],
+    [ extended                  => '%s: %s'                        ],
 );
 our @HEADER_KEYS     = map {$_->[0]} @header;
 our @HEADER_FORMATS  = map {$_->[1]} @header;
-our @HEADER_DEFAULTS = map {$_->[2]} @header;
+our @HEADER_DEFAULTS = (
+    undef,
+    undef,
+    undef,
+    undef,
+    undef,
+    '1.0',
+    ['text/plain', $CHARSET_DEFAULT ],
+    '8bit',
+    undef,
+);
 our @HEADER_REGEX = (
     qr{\A \QProject-Id-Version:\E        \s (.*) \z}xms,
     qr{\A \QPOT-Creation-Date:\E         \s (.*) \z}xms,

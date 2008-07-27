@@ -11,6 +11,7 @@ my $module = 'Test::Differences';
 eval "use $module";
 if ($@) {
     *eq_or_diff = \&is;
+    diag("Module $module not installed; $@");
 }
 
 BEGIN {
@@ -152,7 +153,7 @@ msgid "id_2"
 msgstr "str_2"
 
 EOT
-    open my $file, '<:raw', $DBD_PO_Test_Defaults::FILE_0X or die $!;
+    open my $file, '< :raw', $DBD_PO_Test_Defaults::FILE_0X or die $!;
     local $/ = ();
     my $content = <$file>;
     $po =~ s{\n}{$DBD_PO_Test_Defaults::EOL}xmsg;

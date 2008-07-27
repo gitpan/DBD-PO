@@ -5,7 +5,6 @@ use warnings;
 
 use Test::More;
 
-my ($module, $version) = qw(Test::Pod::Coverage 1.04);
-eval "use $module $version";
-plan skip_all => "$module $version required for testing POD coverage" if $@;
+eval 'use Test::Pod::Coverage 1.04';
+plan skip_all => "Test::Pod::Coverage 1.04 required for testing POD coverage; $@" if $@;
 all_pod_coverage_ok();

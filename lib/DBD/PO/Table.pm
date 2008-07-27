@@ -6,6 +6,8 @@ use warnings;
 use DBD::File;
 use parent qw(-norequire DBD::File::Table);
 
+use Carp qw(croak);
+
 sub fetch_row ($$) {
     my ($self, $data) = @_;
 
@@ -19,7 +21,7 @@ sub fetch_row ($$) {
         local $/ = $po->{'eol'};
         $fields = $po->getline($self->{'fh'});
         if (! $fields) {
-           die "Error while reading file $self->{file}: $!" if $!;
+           croak "Error while reading file $self->{file}: $!" if $!;
            return;
         }
     }
@@ -40,7 +42,7 @@ sub push_row ($$$) {
         pop @{$fields};
     }
     if (! $po->print($fh, $fields)) {
-        die "Error while writing file $self->{file}: $!";
+        croak "Error while writing file $self->{file}: $!";
     }
 
     return 1;
