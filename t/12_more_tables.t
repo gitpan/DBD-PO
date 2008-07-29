@@ -3,18 +3,16 @@
 use strict;
 use warnings;
 
-use lib qw(./t/lib);
-use DBD_PO_Test_Defaults;
-
+use Test::DBD::PO::Defaults;
 use Test::More tests => 22;
 
 BEGIN {
-    use_ok('DBI');
+    require_ok('DBI');
 }
 
 # build table
 my $dbh = DBI->connect(
-    "dbi:PO:f_dir=$DBD_PO_Test_Defaults::PATH",
+    "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH",
     undef,
     undef,
     {
@@ -25,8 +23,8 @@ my $dbh = DBI->connect(
 );
 isa_ok($dbh, 'DBI::db', 'connect');
 
-if ($DBD_PO_Test_Defaults::TRACE) {
-    open my $file, '>', DBD_PO_Test_Defaults::trace_file_name();
+if ($Test::DBD::PO::Defaults::TRACE) {
+    open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
     $dbh->trace(4, $file);
 }
 
@@ -35,7 +33,7 @@ sub create_table {
     my $param = {table_number => shift};
 
     my $dbh = $param->{dbh} = DBI->connect(
-        "dbi:PO:f_dir=$DBD_PO_Test_Defaults::PATH",
+        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH",
         undef,
         undef,
         {
@@ -47,8 +45,8 @@ sub create_table {
     isa_ok($dbh, 'DBI::db', "connect $param->{table_number}");
 
     @{$param}{qw(table table_file)} = (
-        $DBD_PO_Test_Defaults::TABLE_12,
-        $DBD_PO_Test_Defaults::FILE_12,
+        $Test::DBD::PO::Defaults::TABLE_12,
+        $Test::DBD::PO::Defaults::FILE_12,
     );
     for my $name (@{$param}{qw(table table_file)}) {
         $name =~ s{\?}{$param->{table_number}}xms;
@@ -157,13 +155,19 @@ sub fetch {
 sub drop_table {
     my $param = shift;
 
-    my ($table, $table_file) = @{$param}{qw(table table_file)};
+    SKIP:
+    {
+        skip('drop table', 2)
+            if ! $Test::DBD::PO::Defaults::DROP_TABLE;
 
-    my $result = $dbh->do(<<"EO_SQL");
-        DROP TABLE $table
+        my ($table, $table_file) = @{$param}{qw(table table_file)};
+
+        my $result = $dbh->do(<<"EO_SQL");
+            DROP TABLE $table
 EO_SQL
-    is($result, '-1', "drop table $table");
-    ok(! -e $table_file, "table file $table_file deleted");
+        is($result, '-1', "drop table $table");
+        ok(! -e $table_file, "table file $table_file deleted");
+    }
 
     return;
 }

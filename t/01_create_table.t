@@ -3,23 +3,26 @@
 use strict;
 use warnings;
 
-use lib qw(./t/lib);
-use DBD_PO_Test_Defaults;
-
+use Test::DBD::PO::Defaults;
 use Test::More tests => 6;
-my $module = 'Test::Differences';
-eval "use $module";
+eval {
+    use Test::Differences;
+};
 if ($@) {
     *eq_or_diff = \&is;
-    diag("Module $module not installed; $@");
+    diag("Module Test::Differences not installed; $@");
 }
 
 BEGIN {
-    use_ok('DBI');
+    require_ok('DBI');
 }
 
 my $dbh = DBI->connect(
-    "dbi:PO:f_dir=$DBD_PO_Test_Defaults::PATH;po_eol=\x0D\x0A;po_separator=\x0A;po_charset=utf-8",
+    'dbi:PO:'
+    . "f_dir=$Test::DBD::PO::Defaults::PATH;"
+    . "po_eol=$Test::DBD::PO::Defaults::EOL;"
+    . "po_separator=$Test::DBD::PO::Defaults::SEPARATOR;"
+    . 'charset=utf-8',
     undef,
     undef,
     {
@@ -30,13 +33,13 @@ my $dbh = DBI->connect(
 );
 isa_ok($dbh, 'DBI::db', 'connect');
 
-if ($DBD_PO_Test_Defaults::TRACE) {
-    open my $file, '>', DBD_PO_Test_Defaults::trace_file_name();
+if ($Test::DBD::PO::Defaults::TRACE) {
+    open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
     $dbh->trace(4, $file);
 }
 
 my $result = $dbh->do(<<"EO_SQL");
-    CREATE TABLE $DBD_PO_Test_Defaults::TABLE_0X (
+    CREATE TABLE $Test::DBD::PO::Defaults::TABLE_0X (
         comment    VARCHAR,
         automatic  VARCHAR,
         reference  VARCHAR,
@@ -49,11 +52,11 @@ my $result = $dbh->do(<<"EO_SQL");
     )
 EO_SQL
 is($result, '0E0', 'create table');
-ok(-e $DBD_PO_Test_Defaults::TABLE_0X, 'table file found');
+ok(-e $Test::DBD::PO::Defaults::TABLE_0X, 'table file found');
 
 my @parameters = (
     join(
-        $DBD_PO_Test_Defaults::SEPARATOR,
+        $Test::DBD::PO::Defaults::SEPARATOR,
         qw(
             comment1
             comment2
@@ -85,7 +88,7 @@ my @parameters = (
     ),
 );
 $result = $dbh->do(<<"EO_SQL", undef, @parameters);
-    INSERT INTO $DBD_PO_Test_Defaults::TABLE_0X (
+    INSERT INTO $Test::DBD::PO::Defaults::TABLE_0X (
         comment,
         msgstr
     ) VALUES (?, ?)
@@ -112,9 +115,9 @@ msgstr ""
 "X-Poedit-SourceCharset: utf-8"
 
 EOT
-    open my $file, '< :raw', $DBD_PO_Test_Defaults::FILE_0X or die $!;
+    open my $file, '< :raw', $Test::DBD::PO::Defaults::FILE_0X or die $!;
     local $/ = ();
     my $content = <$file>;
-    $po =~ s{\n}{$DBD_PO_Test_Defaults::EOL}xmsg;
+    $po =~ s{\n}{$Test::DBD::PO::Defaults::EOL}xmsg;
     eq_or_diff($content, $po, 'check po file');
 }

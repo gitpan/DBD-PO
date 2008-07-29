@@ -3,25 +3,25 @@
 use strict;
 use warnings;
 
-use lib qw(./t/lib D:/workspace/DBD-PO/trunk/DBD-PO/t/lib);
-use DBD_PO_Test_Defaults;
-
-use Test::More tests => 17;
-my $module = 'Test::Differences';
-eval "use $module";
+use Test::DBD::PO::Defaults;
+use Test::More tests => 18;
+eval {
+    use Test::Differences;
+};
 if ($@) {
     *eq_or_diff = \&is;
-    diag("Module $module not installed; $@");
+    diag('Module Test::Differences not installed');
 }
-use charnames qw(:full);
 
 BEGIN {
-    use_ok('DBI');
+    require_ok('DBI');
+    require_ok('charnames');
+    charnames->import(':full');
 }
 
 my $trace_file;
-if ($DBD_PO_Test_Defaults::TRACE) {
-    open $trace_file, '>', DBD_PO_Test_Defaults::trace_file_name();
+if ($Test::DBD::PO::Defaults::TRACE) {
+    open $trace_file, '>', Test::DBD::PO::Defaults::trace_file_name();
 }
 
 # build table
@@ -30,7 +30,7 @@ sub build_table {
 
     my $charset = $param->{charset};
     my $dbh = $param->{dbh} = DBI->connect(
-        "dbi:PO:f_dir=$DBD_PO_Test_Defaults::PATH;charset=$charset",
+        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_eol=\n;charset=$charset",
         undef,
         undef,
         {
@@ -46,8 +46,8 @@ sub build_table {
     }
 
     @{$param}{qw(table table_file)} = (
-        $DBD_PO_Test_Defaults::TABLE_13,
-        $DBD_PO_Test_Defaults::FILE_13,
+        $Test::DBD::PO::Defaults::TABLE_13,
+        $Test::DBD::PO::Defaults::FILE_13,
     );
     for my $name (@{$param}{qw(table table_file)}) {
         $name =~ s{\?}{$charset}xms;
@@ -126,11 +126,17 @@ EOT
 sub drop_table {
     my $param = shift;
 
-    my $result = $param->{dbh}->do(<<"EO_SQL");
-        DROP TABLE $param->{table}
+    SKIP:
+    {
+        skip('drop table', 2)
+            if ! $Test::DBD::PO::Defaults::DROP_TABLE;
+
+        my $result = $param->{dbh}->do(<<"EO_SQL");
+            DROP TABLE $param->{table}
 EO_SQL
-    is($result, '-1', 'drop table');
-    ok(! -e $param->{table_file}, "drop table ($param->{charset})");
+        is($result, '-1', 'drop table');
+        ok(! -e $param->{table_file}, "drop table ($param->{charset})");
+    }
 
     return $param;
 }

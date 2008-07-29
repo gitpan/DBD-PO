@@ -11,7 +11,7 @@ use DBD::PO::Statement;
 use DBD::PO::Table;
 use DBD::PO::st;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 our $drh = ();       # holds driver handle once initialised
 our $err = 0;        # holds error code   for DBI::err
@@ -26,7 +26,7 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 80 2008-07-26 17:25:03Z steffenw $
+$Id: PO.pm 99 2008-07-29 12:23:49Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
@@ -54,8 +54,8 @@ $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD
                               #  The default 'po_eol' (po end of line)
                               #  is network typical like 'use Socket qw($CRLF)',
                               #  here set to $LF like 'use Socket qw($LF)'.
-        . 'po_charset=utf-8', # optional:
-                              #  The default 'po_charset' is 'utf-8',
+        . 'charset=utf-8',    # optional:
+                              #  The default 'charset' is 'utf-8',
                               #  here set to 'utf-8' unnecessary.
         undef,                # Username is not used.
         undef,                # Password is not used.
@@ -140,8 +140,8 @@ the translation
 
 Minimized example:
 
-The charset will set to the 'po_charset' given at the connect method
-or to the default 'utf-8'.
+The charset will set to the in parameter 'charset' given value
+at the connect method or to the default 'utf-8'.
 
     my $header_msgstr = $dbh->func(
         undef,

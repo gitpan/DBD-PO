@@ -20,7 +20,7 @@ sub open_table {
     my $meta = $tables->{$table} || {};
     my $po = $meta->{po} || $dbh->{po_po};
     if (! $po) {
-        @{ $dbh->FETCH('f_valid_attrs') }{qw(po_eol po_separator po_charset)} = (1) x 3;
+        @{ $dbh->FETCH('f_valid_attrs') }{qw(po_eol po_separator)} = (1) x 3;
         my $class = $meta->{class}
                     || $dbh->{po_class}
                     || 'DBD::PO::Text::PO';
@@ -37,9 +37,7 @@ sub open_table {
                            : $DBD::PO::dr::SEPARATOR_DEFAULT,
             charset   => exists $meta->{charset}
                          ? $meta->{charset}
-                         : exists $dbh->{po_charset}
-                           ? $dbh->{po_charset}
-                           : $DBD::PO::dr::CHARSET_DEFAULT,
+                         : $DBD::PO::dr::CHARSET_DEFAULT,
         );
         $po = $meta->{po}
             = $class->new(\%opts);

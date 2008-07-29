@@ -3,19 +3,18 @@
 use strict;
 use warnings;
 
-use lib qw(./t/lib);
-use DBD_PO_Test_Defaults;
-
+use Test::DBD::PO::Defaults;
 use Test::More tests => 7;
-my $module = 'Test::Differences';
-eval "use $module";
+eval {
+    use Test::Differences;
+};
 if ($@) {
     *eq_or_diff = \&is;
-    diag("Module $module not installed; $@");
+    diag('Module Test::Differences not installed');
 }
 
 BEGIN {
-    use_ok('DBI');
+    require_ok('DBI');
 }
 
 my $dbh;
@@ -23,7 +22,7 @@ my $dbh;
 # connext
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$DBD_PO_Test_Defaults::PATH",
+        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH",
         undef,
         undef,
         {
@@ -34,8 +33,8 @@ my $dbh;
     );
     isa_ok($dbh, 'DBI::db', 'connect');
 
-    if ($DBD_PO_Test_Defaults::TRACE) {
-        open my $file, '>', DBD_PO_Test_Defaults::trace_file_name();
+    if ($Test::DBD::PO::Defaults::TRACE) {
+        open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
         $dbh->trace(4, $file);
     }
 }
@@ -43,7 +42,7 @@ my $dbh;
 # change table
 {
     my $result = $dbh->do(<<"EO_SQL", undef, qw(str_1u id_1));
-        UPDATE $DBD_PO_Test_Defaults::TABLE_0X
+        UPDATE $Test::DBD::PO::Defaults::TABLE_0X
         SET    msgstr=?
         WHERE  msgid=?
 EO_SQL
@@ -51,7 +50,7 @@ EO_SQL
 
     my $sth = $dbh->prepare(<<"EO_SQL");
         SELECT msgid, msgstr
-        FROM   $DBD_PO_Test_Defaults::TABLE_0X
+        FROM   $Test::DBD::PO::Defaults::TABLE_0X
         WHERE  msgid=?
 EO_SQL
     isa_ok($sth, 'DBI::st', 'prepare');
@@ -111,9 +110,9 @@ msgid "id_2"
 msgstr "str_2"
 
 EOT
-    open my $file, '< :raw', $DBD_PO_Test_Defaults::FILE_0X or die $!;
+    open my $file, '< :raw', $Test::DBD::PO::Defaults::FILE_0X or die $!;
     local $/ = ();
     my $content = <$file>;
-    $po =~ s{\n}{$DBD_PO_Test_Defaults::EOL}xmsg;
+    $po =~ s{\n}{$Test::DBD::PO::Defaults::EOL}xmsg;
     eq_or_diff($content, $po, 'check po file');
 }

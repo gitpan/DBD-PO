@@ -3,19 +3,18 @@
 use strict;
 use warnings;
 
-use lib qw(./t/lib);
-use DBD_PO_Test_Defaults;
-
+use Test::DBD::PO::Defaults;
 use Test::More tests => 12;
-my $module = 'Test::Differences';
-eval "use $module";
+eval {
+    use Test::Differences;
+};
 if ($@) {
     *eq_or_diff = \&is;
-    diag("Module $module not installed; $@");
+    diag('Module Test::Differences not installed');
 }
 
 BEGIN {
-    use_ok('DBI');
+    require_ok('DBI');
 }
 
 my $dbh;
@@ -23,7 +22,7 @@ my $dbh;
 # connext
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$DBD_PO_Test_Defaults::PATH",
+        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH",
         undef,
         undef,
         {
@@ -34,8 +33,8 @@ my $dbh;
     );
     isa_ok($dbh, 'DBI::db', 'connect');
 
-    if ($DBD_PO_Test_Defaults::TRACE) {
-        open my $file, '>', DBD_PO_Test_Defaults::trace_file_name();
+    if ($Test::DBD::PO::Defaults::TRACE) {
+        open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
         $dbh->trace(4, $file);
     }
 }
@@ -43,7 +42,7 @@ my $dbh;
 # obsolete
 {
     my $sth_update = $dbh->prepare(<<"EO_SQL");
-        UPDATE $DBD_PO_Test_Defaults::TABLE_0X
+        UPDATE $Test::DBD::PO::Defaults::TABLE_0X
         SET    obsolete=?
         WHERE  msgid=?
 EO_SQL
@@ -51,7 +50,7 @@ EO_SQL
 
     my $sth_select = $dbh->prepare(<<"EO_SQL");
         SELECT obsolete
-        FROM   $DBD_PO_Test_Defaults::TABLE_0X
+        FROM   $Test::DBD::PO::Defaults::TABLE_0X
         WHERE  msgid=?
 EO_SQL
     isa_ok($sth_select, 'DBI::st', 'prepare select');
@@ -75,12 +74,12 @@ EO_SQL
     for my $data (@data) {
         my $result = $sth_update->execute(
             $data->{set},
-            "id_value1${DBD_PO_Test_Defaults::SEPARATOR}id_value2",
+            "id_value1${Test::DBD::PO::Defaults::SEPARATOR}id_value2",
         );
         is($result, $data->{result}, "update: $data->{test}");
 
         $result = $sth_select->execute(
-            "id_value1${DBD_PO_Test_Defaults::SEPARATOR}id_value2",
+            "id_value1${Test::DBD::PO::Defaults::SEPARATOR}id_value2",
         );
         is($result, 1, "select: $data->{test}");
         $result = $sth_select->fetchrow_arrayref();
@@ -153,9 +152,9 @@ msgid "id_2"
 msgstr "str_2"
 
 EOT
-    open my $file, '< :raw', $DBD_PO_Test_Defaults::FILE_0X or die $!;
+    open my $file, '< :raw', $Test::DBD::PO::Defaults::FILE_0X or die $!;
     local $/ = ();
     my $content = <$file>;
-    $po =~ s{\n}{$DBD_PO_Test_Defaults::EOL}xmsg;
+    $po =~ s{\n}{$Test::DBD::PO::Defaults::EOL}xmsg;
     eq_or_diff($content, $po, 'check po file');
 }

@@ -1,10 +1,14 @@
-package DBD_PO_Test_Defaults;
+package Test::DBD::PO::Defaults;
+
+use strict;
+use warnings;
 
 #use Carp qw(confess); $SIG{__DIE__} = \&confess;
 use Cwd;
 use Socket qw($LF $CRLF);
 
 our $TRACE = 1;
+our $DROP_TABLE = 1;
 
 our ($PATH) = getcwd() =~ m{(.*)}xms;
 $PATH =~ s{\\}{/}xmsg;
@@ -24,3 +28,19 @@ sub trace_file_name {
 
     return "$PATH/trace_$number.txt";
 }
+
+=head1 NAME
+
+Test::DBD::PO::Defaults - Some defaults to run tests for module DBD::PO
+
+$Id: PO.pm 80 2008-07-26 17:25:03Z steffenw $
+
+$HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
+
+=head1 SUBROUTINES/METHOD
+
+=head2 sub trace_file_name
+
+    my $filename_for_trace = trace_file_name();
+
+=cut

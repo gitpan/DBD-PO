@@ -3,13 +3,11 @@
 use strict;
 use warnings;
 
-use lib qw(./t/lib);
-use DBD_PO_Test_Defaults;
-
+use Test::DBD::PO::Defaults;
 use Test::More tests => 4;
 
 BEGIN {
-    use_ok('DBI');
+    require_ok('DBI');
 }
 
 my $dbh;
@@ -17,7 +15,7 @@ my $dbh;
 # connext
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$DBD_PO_Test_Defaults::PATH",
+        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH",
         undef,
         undef,
         {
@@ -28,17 +26,21 @@ my $dbh;
     );
     isa_ok($dbh, 'DBI::db', 'connect');
 
-    if ($DBD_PO_Test_Defaults::TRACE) {
-        open my $file, '>', DBD_PO_Test_Defaults::trace_file_name();
+    if ($Test::DBD::PO::Defaults::TRACE) {
+        open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
         $dbh->trace(4, $file);
     }
 }
 
-# destroy table
+# drop table
+SKIP:
 {
+    skip('drop table', 2)
+        if ! $Test::DBD::PO::Defaults::DROP_TABLE;
+
     my $result = $dbh->do(<<"EO_SQL");
-        DROP TABLE $DBD_PO_Test_Defaults::TABLE_0X
+        DROP TABLE $Test::DBD::PO::Defaults::TABLE_0X
 EO_SQL
     is($result, '-1', 'drop table');
-    ok(! -e $DBD_PO_Test_Defaults::FILE_0X, 'table file deleted');
+    ok(! -e $Test::DBD::PO::Defaults::FILE_0X, 'table file deleted');
 }

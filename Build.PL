@@ -18,10 +18,18 @@ Module::Build->new(
         # Socket           => 0, # perl dist
     },
     build_requires => {
-        'Test::Simple'       => 0, # for Test::More
-        # 'Test::Differences => 0, # optional (test output is more readable)
-        # Cwd                => 0, # perl dist
-        # charnames          => 0, # perl dist
+        'Test::Simple' => 0, # for Test::More
+        # Cwd          => 0, # perl dist
+        # charnames    => 0, # perl dist
+    },
+    recommends => {
+        'DBD::File'            => 0,
+        'SQL::Parser'          => 0,
+        # build
+        'Test::Pod'            => '1.14',
+        'Test::Pod::Coverage'  => '1.04',
+        'Test::Differences'    => 0,
+        'Test::More'           => 0,
     },
     create_makefile_pl   => 'traditional',
     recursive_test_files => 1,

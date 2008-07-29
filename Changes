@@ -1,5 +1,11 @@
 Revision history for Perl extension DBD::PO.
 
+0.05  Tue Jul 29 15:00:00 2008
+- 5rd developer test version
+- fixed any problems with charset and eol
+- changed parameter po_charset to charset
+- some Kwalitte
+
 0.04  Sun Jul 27 12:00:00 2008
 - 4rd developer test version
 - fixed any problems with charset

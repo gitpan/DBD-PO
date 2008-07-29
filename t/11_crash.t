@@ -3,13 +3,11 @@
 use strict;
 use warnings;
 
-use lib qw(./t/lib);
-use DBD_PO_Test_Defaults;
-
+use Test::DBD::PO::Defaults;
 use Test::More tests => 15;
 
 BEGIN {
-    use_ok('DBI');
+    require_ok('DBI');
 }
 
 my $dbh;
@@ -17,7 +15,7 @@ my $dbh;
 # build table
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$DBD_PO_Test_Defaults::PATH",
+        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH",
         undef,
         undef,
         {
@@ -28,25 +26,25 @@ my $dbh;
     );
     isa_ok($dbh, 'DBI::db', 'connect');
 
-    if ($DBD_PO_Test_Defaults::TRACE) {
-        open my $file, '>', DBD_PO_Test_Defaults::trace_file_name();
+    if ($Test::DBD::PO::Defaults::TRACE) {
+        open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
         $dbh->trace(4, $file);
     }
 
     my $result = $dbh->do(<<"EO_SQL");
-        CREATE TABLE $DBD_PO_Test_Defaults::TABLE_11 (
+        CREATE TABLE $Test::DBD::PO::Defaults::TABLE_11 (
             msgid  VARCHAR,
             msgstr VARCHAR
         )
 EO_SQL
     is($result, '0E0', 'create table');
-    ok(-e $DBD_PO_Test_Defaults::FILE_11, 'table file found');
+    ok(-e $Test::DBD::PO::Defaults::FILE_11, 'table file found');
 }
 
 # write a line and not the header at first
 eval {
     $dbh->do(<<"EO_SQL", undef, 'id');
-        INSERT INTO $DBD_PO_Test_Defaults::TABLE_11 (
+        INSERT INTO $Test::DBD::PO::Defaults::TABLE_11 (
             msgid
         ) VALUES (?)
 EO_SQL
@@ -60,7 +58,7 @@ like(
 # write an empty header
 eval {
     $dbh->do(<<"EO_SQL", undef, undef);
-        INSERT INTO $DBD_PO_Test_Defaults::TABLE_11 (
+        INSERT INTO $Test::DBD::PO::Defaults::TABLE_11 (
             msgstr
         ) VALUES (?)
 EO_SQL
@@ -74,7 +72,7 @@ like(
 # write a false header
 eval {
     $dbh->do(<<"EO_SQL", undef, 'false');
-        INSERT INTO $DBD_PO_Test_Defaults::TABLE_11 (
+        INSERT INTO $Test::DBD::PO::Defaults::TABLE_11 (
             msgstr
         ) VALUES (?)
 EO_SQL
@@ -89,7 +87,7 @@ like(
 {
     my $msgstr = $dbh->func(undef, 'build_header_msgstr');
     my $result = $dbh->do(<<"EO_SQL", undef, $msgstr);
-        INSERT INTO $DBD_PO_Test_Defaults::TABLE_11 (
+        INSERT INTO $Test::DBD::PO::Defaults::TABLE_11 (
             msgstr
         ) VALUES (?)
 EO_SQL
@@ -99,7 +97,7 @@ EO_SQL
 # write a true line
 {
     my $result = $dbh->do(<<"EO_SQL", undef, 'id', 'str');
-        INSERT INTO $DBD_PO_Test_Defaults::TABLE_11 (
+        INSERT INTO $Test::DBD::PO::Defaults::TABLE_11 (
             msgid,
             msgstr
         ) VALUES (?, ?)
@@ -110,7 +108,7 @@ EO_SQL
 # a line looks like a header
 eval {
     $dbh->do(<<"EO_SQL", undef, 'translation');
-        INSERT INTO $DBD_PO_Test_Defaults::TABLE_11 (
+        INSERT INTO $Test::DBD::PO::Defaults::TABLE_11 (
             msgstr
         ) VALUES (?)
 EO_SQL
@@ -124,7 +122,7 @@ like(
 # change a header to an empty header
 eval {
     $dbh->do(<<"EO_SQL", undef, q{}, q{});
-        UPDATE $DBD_PO_Test_Defaults::TABLE_11
+        UPDATE $Test::DBD::PO::Defaults::TABLE_11
         SET    msgstr=?
         WHERE  msgid=?
 EO_SQL
@@ -138,7 +136,7 @@ like(
 # change a header to a false header
 eval {
     $dbh->do(<<"EO_SQL", undef, 'false', q{});
-        UPDATE $DBD_PO_Test_Defaults::TABLE_11
+        UPDATE $Test::DBD::PO::Defaults::TABLE_11
         SET    msgstr=?
         WHERE  msgid=?
 EO_SQL
@@ -152,7 +150,7 @@ like(
 # change a line to a false line
 eval {
     $dbh->do(<<"EO_SQL", undef, q{}, 'id');
-        UPDATE $DBD_PO_Test_Defaults::TABLE_11
+        UPDATE $Test::DBD::PO::Defaults::TABLE_11
         SET    msgid=?
         WHERE  msgid=?
 EO_SQL
@@ -163,11 +161,15 @@ like(
     'change a line to a false line',
 );
 
-# destroy table
+# drop table
+SKIP:
 {
+    skip('drop table', 2)
+        if ! $Test::DBD::PO::Defaults::DROP_TABLE;
+
     my $result = $dbh->do(<<"EO_SQL");
-        DROP TABLE $DBD_PO_Test_Defaults::TABLE_11
+        DROP TABLE $Test::DBD::PO::Defaults::TABLE_11
 EO_SQL
     is($result, '-1', 'drop table');
-    ok(! -e $DBD_PO_Test_Defaults::FILE_11, 'table file deleted');
+    ok(! -e $Test::DBD::PO::Defaults::FILE_11, 'table file deleted');
 }
