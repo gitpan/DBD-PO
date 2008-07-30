@@ -1,5 +1,10 @@
 Revision history for Perl extension DBD::PO.
 
+0.06  Wed Jul 30 22:00:00 2008
+- 6rd developer test version
+- change tests: change use Test::Differences in eval block to require
+- add example
+
 0.05  Tue Jul 29 15:00:00 2008
 - 5rd developer test version
 - fixed any problems with charset and eol

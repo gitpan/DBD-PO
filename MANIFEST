@@ -1,6 +1,7 @@
 Build.PL
 Changes
-DBD-PO.ppd
+example/read.pl
+example/write.pl
 lib/DBD/PO.pm
 lib/DBD/PO/db.pm
 lib/DBD/PO/dr.pm

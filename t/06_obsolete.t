@@ -6,7 +6,8 @@ use warnings;
 use Test::DBD::PO::Defaults;
 use Test::More tests => 12;
 eval {
-    use Test::Differences;
+    require Test::Differences;
+    Test::Differences->import('eq_or_diff');
 };
 if ($@) {
     *eq_or_diff = \&is;

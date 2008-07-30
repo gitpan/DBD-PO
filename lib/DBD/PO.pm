@@ -11,7 +11,7 @@ use DBD::PO::Statement;
 use DBD::PO::Table;
 use DBD::PO::st;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 our $drh = ();       # holds driver handle once initialised
 our $err = 0;        # holds error code   for DBI::err
@@ -26,13 +26,13 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 99 2008-07-29 12:23:49Z steffenw $
+$Id: PO.pm 103 2008-07-30 19:54:43Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
 =head1 VERSION
 
-0.01
+0.06
 
 =head1 SYNOPSIS
 
