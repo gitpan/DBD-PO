@@ -15,7 +15,7 @@ my $dbh;
 # connext
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH",
+        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_charset=utf-8",
         undef,
         undef,
         {
@@ -54,11 +54,11 @@ is_deeply(
         'no PO revision date',
         [
             'Steffen Winkler',
-            'steffenw@cpan.org'
+            'steffenw@example.org'
         ],
         [
             'MyTeam',
-            'cpan@perl.org',
+            'cpan@example.org',
         ],
         '1.0',
         [

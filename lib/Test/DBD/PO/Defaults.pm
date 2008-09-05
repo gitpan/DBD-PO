@@ -12,16 +12,24 @@ our $DROP_TABLE = 1;
 
 our ($PATH) = getcwd() =~ m{(.*)}xms;
 $PATH =~ s{\\}{/}xmsg;
-our $SEPARATOR = $LF;
-our $EOL       = $CRLF;
-our $TABLE_0X  = 'po_test.po';
-our $TABLE_11  = 'po_crash.po';
-our $TABLE_12  = 'po_more_tables_?.po';
-our $TABLE_13  = 'po_charset_?.po';
-our $FILE_0X   = "$PATH/$TABLE_0X";
-our $FILE_11   = "$PATH/$TABLE_11";
-our $FILE_12   = "$PATH/$TABLE_12";
-our $FILE_13   = "$PATH/$TABLE_13";
+our $SEPARATOR       = $LF;
+our $EOL             = $CRLF;
+my  $TABLE_LOCALE_PO = 'locale_po.po';
+my  $TABLE_TEXT_PO   = 'text_po.po';
+our $TABLE_0X        = 'dbd_po_test.po';
+our $TABLE_11        = 'dbd_po_crash.po';
+our $TABLE_12        = 'dbd_po_more_tables_?.po';
+our $TABLE_13        = 'dbd_po_charset_?.po';
+our $TABLE_14        = 'dbd_po_quote.po';
+our $TABLE_15        = 'dbd_po_header_msgstr_hash.po';
+our $FILE_LOCALE_PO  = "$PATH/$TABLE_LOCALE_PO";
+our $FILE_TEXT_PO    = "$PATH/$TABLE_TEXT_PO";
+our $FILE_0X         = "$PATH/$TABLE_0X";
+our $FILE_11         = "$PATH/$TABLE_11";
+our $FILE_12         = "$PATH/$TABLE_12";
+our $FILE_13         = "$PATH/$TABLE_13";
+our $FILE_14         = "$PATH/$TABLE_14";
+our $FILE_15         = "$PATH/$TABLE_15";
 
 sub trace_file_name {
     my ($number) = (caller 0)[1] =~ m{\b (\d\d) \w+ \. t}xms;

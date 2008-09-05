@@ -4,11 +4,8 @@ use strict;
 use warnings;
 
 use Test::DBD::PO::Defaults;
-use Test::More tests => 7;
-eval {
-    require Test::Differences;
-    Test::Differences->import('eq_or_diff');
-};
+use Test::More tests => 8;
+eval 'use Test::Differences qw(eq_or_diff)';
 if ($@) {
     *eq_or_diff = \&is;
     diag('Module Test::Differences not installed');
@@ -23,7 +20,7 @@ my $dbh;
 # connext
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH",
+        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_charset=utf-8",
         undef,
         undef,
         {
@@ -40,27 +37,51 @@ my $dbh;
     }
 }
 
-# change table
+# check table
 {
-    my $result = $dbh->do(<<"EO_SQL", undef, qw(str_1u id_1));
-        UPDATE $Test::DBD::PO::Defaults::TABLE_0X
-        SET    msgstr=?
-        WHERE  msgid=?
-EO_SQL
-    is($result, 1, 'update row 1');
-
     my $sth = $dbh->prepare(<<"EO_SQL");
         SELECT msgid, msgstr
         FROM   $Test::DBD::PO::Defaults::TABLE_0X
         WHERE  msgid=?
 EO_SQL
-    isa_ok($sth, 'DBI::st', 'prepare');
+    isa_ok($sth, 'DBI::st');
 
-    $result = $sth->execute('id_1');
-    is($result, 1, 'execute');
+    my @data = (
+        {
+            id     => 'id_2',
+            _id    => 'id_2',
+            result => 1,
+            fetch  => [
+                {
+                    msgid  => 'id_2',
+                    msgstr => 'str_2',
+                },
+            ],
+        },
+        {
+            id     => "id_value1${Test::DBD::PO::Defaults::SEPARATOR}id_value2",
+            _id    => "id_value1\${separator}id_value2",
+            result => 1,
+            fetch  => [
+                {
+                    msgid  => "id_value1${Test::DBD::PO::Defaults::SEPARATOR}id_value2",
+                    msgstr => "str_value1${Test::DBD::PO::Defaults::SEPARATOR}str_value2",
+                },
+            ],
+        },
+    );
 
-    $result = $sth->fetchrow_arrayref();
-    is_deeply($result, [qw(id_1 str_1u)], 'fetch result');
+    for my $data (@data) {
+        my $result = $sth->execute($data->{id});
+        is($result, $data->{result}, "execute: $data->{_id}");
+
+        $result = $sth->fetchall_arrayref( {} );
+        is_deeply(
+            $result,
+            $data->{fetch},
+            "fetch result: $data->{_id}",
+        );
+    }
 }
 
 # check table file
@@ -73,8 +94,8 @@ msgstr ""
 "Project-Id-Version: Testproject\n"
 "POT-Creation-Date: no POT creation date\n"
 "PO-Revision-Date: no PO revision date\n"
-"Last-Translator: Steffen Winkler <steffenw@cpan.org>\n"
-"Language-Team: MyTeam <cpan@perl.org>\n"
+"Last-Translator: Steffen Winkler <steffenw@example.org>\n"
+"Language-Team: MyTeam <cpan@example.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -105,7 +126,7 @@ msgid "id_value_mini"
 msgstr ""
 
 msgid "id_1"
-msgstr "str_1u"
+msgstr "str_1"
 
 msgid "id_2"
 msgstr "str_2"

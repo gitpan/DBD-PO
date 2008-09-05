@@ -4,11 +4,8 @@ use strict;
 use warnings;
 
 use Test::DBD::PO::Defaults;
-use Test::More tests => 18;
-eval {
-    require Test::Differences;
-    Test::Differences->import('eq_or_diff');
-};
+use Test::More tests => 27;
+eval 'use Test::Differences qw(eq_or_diff)';
 if ($@) {
     *eq_or_diff = \&is;
     diag('Module Test::Differences not installed');
@@ -18,6 +15,8 @@ BEGIN {
     require_ok('DBI');
     require_ok('charnames');
     charnames->import(':full');
+    require_ok('Encode');
+    Encode->import('encode');
 }
 
 my $trace_file;
@@ -27,11 +26,11 @@ if ($Test::DBD::PO::Defaults::TRACE) {
 
 # build table
 sub build_table {
-    my $param = {charset => shift};
+    my $param = shift;
 
     my $charset = $param->{charset};
     my $dbh = $param->{dbh} = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_eol=\n;charset=$charset",
+        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_eol=\n;po_charset=$charset",
         undef,
         undef,
         {
@@ -63,15 +62,16 @@ EO_SQL
     is($result, '0E0', "create table ($charset)");
     ok(-e $param->{table_file}, "table file found ($charset)");
 
-    return $param;
+    return;
 }
 
 sub add_header {
     my $param = shift;
 
     my $dbh = $param->{dbh};
+    my $charset = $param->{charset};
     my $msgstr = $dbh->func(
-        undef,
+        ($charset ? {charset => $charset} : undef),
         'build_header_msgstr',
     );
     my $result = $dbh->do(<<"EO_SQL", undef, $msgstr);
@@ -81,33 +81,39 @@ sub add_header {
 EO_SQL
     is($result, 1, "add header ($param->{charset})");
 
-    return $param;
+    return;
 }
 
 sub add_line {
     my $param = shift;
 
-    my $msgid  = "id_\N{SECTION SIGN}";
-    my $msgstr = "str_\N{SECTION SIGN}";
+    my $charset = $param->{charset};
+    my $section_sign = $charset
+                       ? "\N{SECTION SIGN}"
+                       : encode 'iso-8859-1', "\N{SECTION SIGN}";
+    my $msgid  = "id_$section_sign";
+    my $msgstr = "str_$section_sign";
     my $result = $param->{dbh}->do(<<"EO_SQL", undef, $msgid, $msgstr);
         INSERT INTO $param->{table} (
             msgid,
             msgstr
         ) VALUES (?, ?)
 EO_SQL
-    is($result, 1, "add line ($param->{charset})");
+    is($result, 1, "add line ($charset)");
 
-    return $param;
+    return;
 }
 
 sub check_table_file {
     my $param = shift;
 
+    my $charset = $param->{charset};
+    my $po_charset = $charset || 'iso-8859-1';
     my $po = <<"EOT";
 msgid ""
 msgstr ""
 "MIME-Version: 1.0\\n"
-"Content-Type: text/plain; charset=$param->{charset}\\n"
+"Content-Type: text/plain; charset=$po_charset\\n"
 "Content-Transfer-Encoding: 8bit"
 
 msgid "id_\N{SECTION SIGN}"
@@ -115,20 +121,27 @@ msgstr "str_\N{SECTION SIGN}"
 
 EOT
     local $/ = ();
-    open my $file1, "< :encoding($param->{charset})", $param->{table_file} or die $!;
+    open
+        my $file1,
+        "< :encoding($po_charset)",
+        $param->{table_file}
+        or die $!;
     my $content1 = <$file1>;
-    open my $file2, "< :encoding($param->{charset})", \($po) or die $!;
+    open
+        my $file2,
+        "< :encoding(utf-8)",
+        \($po)
+        or die $!;
     my $content2 = <$file2>;
-    eq_or_diff($content1, $content2, "check po file ($param->{charset})");
+    eq_or_diff($content1, $content2, "check po file ($charset)");
 
-    return $param;
+    return;
 }
 
 sub drop_table {
     my $param = shift;
 
-    SKIP:
-    {
+    SKIP: {
         skip('drop table', 2)
             if ! $Test::DBD::PO::Defaults::DROP_TABLE;
 
@@ -139,21 +152,14 @@ EO_SQL
         ok(! -e $param->{table_file}, "drop table ($param->{charset})");
     }
 
-    return $param;
+    return;
 }
 
-() = map {
-         drop_table($_);
-     }
-     map {
-         check_table_file($_);
-     }
-     map {
-         add_line($_);
-     }
-     map {
-         add_header($_);
-     }
-     map {
-         build_table($_);
-     } qw(utf-8 ISO-8859-1);
+for ( qw(utf-8 iso-8859-1), q{} ) {
+    my $param = {charset => $_};
+    build_table($param);
+    add_header($param);
+    add_line($param);
+    check_table_file($param);
+    drop_table($param);
+}

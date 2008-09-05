@@ -11,13 +11,9 @@ sub new {
     my $this    = shift;
     my %options = @_;
 
-    my $class   = ref($this) || $this;
-    my $self    = {
-        eol => defined $options{eol}
-               ? $options{eol}
-               : "\n",
-    };
-    bless $self, $class;
+    my $class = ref($this) || $this;
+    my $self = bless {}, $class;
+    $self->eol( $options{eol} );
     $self->_flags({});
     $self->msgid( $options{'-msgid'} )
         if defined( $options{'-msgid'} );
@@ -53,31 +49,39 @@ sub new {
     return $self;
 }
 
+sub eol {
+    my $self = shift;
+
+    if (@_) {
+        my $eol = shift;
+        $self->{eol} = $eol;
+    }
+
+    return defined $self->{eol} ? $self->{eol} : "\n";
+}
+
 sub msgctxt {
     my $self = shift;
 
-    @_ ? $self->{'msgctxt'} = $self->quote(shift) : $self->{'msgctxt'};
+    @_ ? $self->{msgctxt} = $self->quote(shift) : $self->{msgctxt};
 }
 
 sub msgid {
     my $self = shift;
 
-    @_ ? $self->{'msgid'} = $self->quote(shift) : $self->{'msgid'};
+    @_ ? $self->{msgid} = $self->quote(shift) : $self->{msgid};
 }
 
 sub msgid_plural {
     my $self = shift;
 
-    @_
-        ? $self->{'msgid_plural'} =
-          $self->quote(shift)
-        : $self->{'msgid_plural'};
+    @_ ? $self->{msgid_plural} = $self->quote(shift) : $self->{msgid_plural};
 }
 
 sub msgstr {
     my $self = shift;
 
-    @_ ? $self->{'msgstr'} = $self->quote(shift) : $self->{'msgstr'};
+    @_ ? $self->{msgstr} = $self->quote(shift) : $self->{msgstr};
 }
 
 sub msgstr_n {
@@ -88,44 +92,44 @@ sub msgstr_n {
 
         # check that we have a hashref.
         croak
-          'Argument to msgstr_n must be a hashref: { n => "string n", ... }.'
-          unless ref($hashref) eq 'HASH';
+            'Argument to msgstr_n must be a hashref: { n => "string n", ... }.'
+            unless ref($hashref) eq 'HASH';
 
         # Check that the keys are all numbers.
         croak 'Keys to msgstr_n hashref must be numbers'
-          if grep { m/\D/ } keys %$hashref;
+            if grep { m{\D}xms } keys %{$hashref};
 
         # Quote all the values in the hashref.
-        $self->{'msgstr_n'}{$_} = $self->quote( $$hashref{$_} )
-          for keys %$hashref;
+        $self->{msgstr_n}->{$_} = $self->quote( $hashref->{$_} )
+          for keys %{$hashref};
 
     }
 
-    return $self->{'msgstr_n'};
+    return $self->{msgstr_n};
 }
 
 sub comment {
     my $self = shift;
 
-    @_ ? $self->{'comment'} = shift : $self->{'comment'};
+    @_ ? $self->{comment} = shift : $self->{comment};
 }
 
 sub automatic {
     my $self = shift;
 
-    @_ ? $self->{'automatic'} = shift : $self->{'automatic'};
+    @_ ? $self->{automatic} = shift : $self->{automatic};
 }
 
 sub reference {
     my $self = shift;
 
-    @_ ? $self->{'reference'} = shift : $self->{'reference'};
+    @_ ? $self->{reference} = shift : $self->{reference};
 }
 
 sub obsolete {
     my $self = shift;
 
-    @_ ? $self->{'obsolete'} = shift : $self->{'obsolete'};
+    @_ ? $self->{obsolete} = shift : $self->{obsolete};
 }
 
 sub fuzzy {
@@ -154,7 +158,7 @@ sub php_format {
 sub _flags {
     my $self = shift;
 
-    @_ ? $self->{'_flags'} = shift : $self->{'_flags'};
+    @_ ? $self->{_flags} = shift : $self->{_flags};
 }
 
 sub _tri_value_flag {
@@ -186,91 +190,68 @@ sub _tri_value_flag {
 }
 
 sub add_flag {
-        my ($self, $flag_name) = @_;
+    my ($self, $flag_name) = @_;
 
-        $self->_flags()->{$flag_name} = 1;
+    $self->_flags()->{$flag_name} = 1;
 
-        return;
+    return;
 }
 
 sub remove_flag {
-        my ($self, $flag_name) = @_;
+    my ($self, $flag_name) = @_;
 
-        delete $self->_flags()->{$flag_name};
+    delete $self->_flags()->{$flag_name};
 
-        return;
+    return;
 }
 
 sub has_flag {
-        my ($self, $flag_name) = @_;
+    my ($self, $flag_name) = @_;
 
-        my $flags = $self->_flags();
+    my $flags = $self->_flags();
 
-        exists $flags->{$flag_name}
-            or return;
-        return $flags->{$flag_name};
+    exists $flags->{$flag_name}
+        or return;
+    return $flags->{$flag_name};
 }
 
 sub loaded_line_number {
     my $self = shift;
 
-    @_ ? $self->{'loaded_line_number'} = shift : $self->{'loaded_line_number'};
-}
-
-sub _normalize_str {
-    my $self     = shift;
-    my $string   = shift;
-
-    my $dequoted = $self->dequote($string);
-
-    # This isn't quite perfect, but it's fast and easy
-    if ( $dequoted =~ /(^|[^\\])(\\\\)*\\n./ ) {
-        # Multiline
-        my $output = '""' . $self->{eol};
-        my @lines = split m{\\n}xms, $dequoted;
-        my $lastline = pop @lines; # special treatment for this one
-        foreach (@lines) {
-            $output .= $self->quote("$_\\n") . $self->{eol};
-        }
-        $output .= $self->quote($lastline) . $self->{eol} if length $lastline;
-        return $output;
-    }
-    else {
-        # Single line
-        return $self->{eol} if ! defined $string;
-        return "$string$self->{eol}";
-    }
+    @_ ? $self->{loaded_line_number} = shift : $self->{loaded_line_number};
 }
 
 sub dump {
     my $self = shift;
 
-    my $obsolete = $self->obsolete() ? '#~ ' : '';
-    my $dump;
-    $dump = $self->_dump_multi_comment( $self->comment, "# " )
-        if ( $self->comment );
-    $dump .= $self->_dump_multi_comment( $self->automatic, "#. " )
-        if ( $self->automatic );
-    $dump .= $self->_dump_multi_comment( $self->reference, "#: " )
-        if ( $self->reference );
+    my $obsolete = $self->obsolete() ? '#~ ' : q{};
+    my $dump = q{};
+    $dump .= $self->_dump_multi_comment( $self->comment(), "# " )
+        if $self->comment();
+    $dump .= $self->_dump_multi_comment( $self->automatic(), "#. " )
+        if $self->automatic();
+    $dump .= $self->_dump_multi_comment( $self->reference(), "#: " )
+        if $self->reference();
 
     my $flags = join q{}, map {", $_"} sort keys %{ $self->_flags() };
-    $dump .= "#$flags$self->{eol}" if $flags;
+    $dump .= "#$flags" . $self->eol()
+        if $flags;
 
-    $dump .= "${obsolete}msgctxt " . $self->_normalize_str( $self->msgctxt )
-                if $self->msgctxt;
-    $dump .= "${obsolete}msgid " . $self->_normalize_str( $self->msgid );
-    $dump .= "${obsolete}msgid_plural " . $self->_normalize_str( $self->msgid_plural )
-                if $self->msgid_plural;
+    $dump .= "${obsolete}msgctxt " . $self->msgctxt()
+        if $self->msgctxt();
+    $dump .= "${obsolete}msgid " . $self->msgid();
+    $dump .= "${obsolete}msgid_plural " . $self->msgid_plural()
+        if $self->msgid_plural();
 
-    $dump .= "${obsolete}msgstr " . $self->_normalize_str( $self->msgstr ) if $self->msgstr;
+    $dump .= "${obsolete}msgstr " . $self->msgstr()
+        if $self->msgstr();
 
-    if ( my $msgstr_n = $self->msgstr_n ) {
-        $dump .= "${obsolete}msgstr[$_] " . $self->_normalize_str( $$msgstr_n{$_} )
-          for sort { $a <=> $b } keys %$msgstr_n;
+    if ( my $msgstr_n = $self->msgstr_n() ) {
+        $dump .= "${obsolete}msgstr[$_] " . $msgstr_n->{$_}
+            for sort { $a <=> $b } keys %{$msgstr_n};
     }
 
-    $dump .= $self->{eol};
+    $dump .= $self->eol();
 
     return $dump;
 }
@@ -280,9 +261,11 @@ sub _dump_multi_comment {
     my $comment = shift;
     my $leader  = shift;
 
+    my $eol = $self->eol();
+
     return join q{}, map {
-        "$leader$_$self->{eol}";
-    } split m{\Q$self->{eol}\E}xms, $comment;
+        "$leader$_$eol";
+    } split m{\Q$eol\E}xms, $comment;
 }
 
 # Quote a string properly
@@ -291,56 +274,98 @@ sub quote {
     my $string = shift;
 
     if (! defined $string) {
-        $string = q{};
+        return qq{""};
     }
-    $string =~ s/"/\\"/g;
+    my %named = (
+        #qq{\a} => qq{\\a}, # BEL
+        #qq{\b} => qq{\\b}, # BS
+        #qq{\t} => qq{\\t}, # TAB
+        qq{\n} => qq{\\n}, # LF
+        #qq{\f} => qq{\\f}, # FF
+        #qq{\r} => qq{\\r}, # CR
+        qq{"}  => qq{\\"},
+        qq{\\} => qq{\\\\},
+    );
+    $string =~ s{
+        ( [^ !#$%&'()*+,\-.\/0-9:;<=>?@A-Z\[\]\^_`a-z{|}~] )
+    }{
+        ord $1 < 0x80
+        ? (
+            exists $named{$1}
+            ? $named{$1}
+            : sprintf '\x%02x', ord $1
+        )
+        : $1;
+    }xmsge;
+    $string = qq{"$string"};
+    # multiline
+    my $eol = $self->eol();
+    if ($string =~ s{\A ( " .*? \\n )}{""$eol$1}xms) {
+        $string =~ s{\\n}{\\n"$eol"}xmsg;
+    }
 
-    return "\"$string\"";
+    return "$string$eol";
 }
 
 sub dequote {
     my $self   = shift;
     my $string = shift;
+    my $eol    = shift || $self->eol();
 
     if (! defined $string) {
         $string = q{};
     }
-    $string =~ s/^"(.*)"/$1/;
-    $string =~ s/\\"/"/g;
+    # multiline
+    if ($string =~ s{\A "" \Q$eol\E}{}xms) {
+        $string =~ s{\\n"\Q$eol\E"}{\\n}xmsg;
+    }
+    $string =~ s{( [\$\@] )}{\\$1}xmsg; # make uncritical
+    ($string) = $string =~ m{
+        \A
+        (
+            "
+            (?: \\\\ | \\" | [^"] )*
+            "
+            # eol
+        )
+    }xms; # check the quoted string and untaint
+    return q{} if ! defined $string;
+    my $dequoted = eval $string;
+    croak "Can not eval string\n$string\n$@" if $@;
 
-    return $string;
+    return $dequoted;
 }
 
 sub save_file_fromarray {
     my $self = shift;
 
-    $self->_save_file( @_, 0 );
+    $self->_save_file(@_, 0);
 }
 
 sub save_file_fromhash {
     my $self = shift;
 
-    $self->_save_file( @_, 1 );
+    $self->_save_file(@_, 1);
 }
 
 sub _save_file {
     my $self    = shift;
     my $file    = shift;
     my $entries = shift;
-    my $ashash  = shift;
+    my $as_hash  = shift;
 
-    open( OUT, ">$file" ) or return undef;
-    if ($ashash) {
-        foreach ( sort keys %$entries ) {
-            print OUT $entries->{$_}->dump;
+    open my $out, '>', $file or return;
+    if ($as_hash) {
+        for (sort keys %{$entries}) {
+            print {$out} $entries->{$_}->dump();
         }
     }
     else {
-        foreach (@$entries) {
-            print OUT $_->dump;
+        for (@{$entries}) {
+            print {$out} $_->dump();
         }
     }
-    close OUT;
+    close $out;
 }
 
 sub load_file_asarray {
@@ -462,38 +487,38 @@ sub _load_file {
         }
         elsif (/^(#~\s+)?msgctxt\s+(.*)/) {
             $po = $class->new(eol => $eol, -loaded_line_number => $line_number ) unless defined($po);
-            $buffer{msgctxt} = $self->dequote($2);
+            $buffer{msgctxt} = $self->dequote($2, $eol);
             $last_buffer = \$buffer{msgctxt};
             $po->obsolete(1) if $1;
         }
         elsif (/^(#~\s+)?msgid\s+(.*)/) {
             $po = $class->new(eol => $eol, -loaded_line_number => $line_number ) unless defined($po);
-            $buffer{msgid} = $self->dequote($2);
+            $buffer{msgid} = $self->dequote($2, $eol);
             $last_buffer = \$buffer{msgid};
             $po->obsolete(1) if $1;
         }
         elsif (/^(#~\s+)?msgid_plural\s+(.*)/) {
             $po = $class->new(eol => $eol, -loaded_line_number => $line_number ) unless defined($po);
-            $buffer{msgid_plural} = $self->dequote($2);
+            $buffer{msgid_plural} = $self->dequote($2, $eol);
             $last_buffer = \$buffer{msgid_plural};
             $po->obsolete(1) if $1;
         }
         elsif (/^(?:#~\s+)?msgstr\s+(.*)/) {
 
             # translated string
-            $buffer{msgstr} = $self->dequote($1);
+            $buffer{msgstr} = $self->dequote($1, $eol);
             $last_buffer = \$buffer{msgstr};
         }
         elsif (/^(?:#~\s+)?msgstr\[(\d+)\]\s+(.*)/) {
 
             # translated string
-            $buffer{msgstr_n}{$1} = $self->dequote($2);
+            $buffer{msgstr_n}{$1} = $self->dequote($2, $eol);
             $last_buffer = \$buffer{msgstr_n}{$1};
         }
         elsif (/^(?:#~\s+)?"/) {
 
             # contined string
-            $$last_buffer .= $self->dequote($_);
+            $$last_buffer .= $self->dequote($_, $eol);
         }
         else {
             warn "Strange line at $file_name line $line_number: $_\n";
@@ -562,26 +587,27 @@ Locale::PO - Perl module for manipulating .po entries from GNU gettext
 
 =head1 SYNOPSIS
 
-        use Locale::PO;
+    use Locale::PO;
 
-        $po = new Locale::PO([-option=>value,...])
-        [$string =] $po->msgid([new string]);
-        [$string =] $po->msgstr([new string]);
-        [$string =] $po->comment([new string]);
-        [$string =] $po->automatic([new string]);
-        [$string =] $po->reference([new string]);
-        [$value =] $po->fuzzy([value]);
-        [$value =] $po->add_flag('c-format');
-        [$value =] $po->add_flag('php-format');
-        print $po->dump;
+    $po = Locale::PO->new([eol => $eol, [-option=>value ,...]])
+    [$string =] $po->msgid([new string]);
+    [$string =] $po->msgstr([new string]);
+    [$string =] $po->comment([new string]);
+    [$string =] $po->automatic([new string]);
+    [$string =] $po->reference([new string]);
+    [$value =] $po->fuzzy([value]);
+    [$value =] $po->add_flag('c-format');
+    [$value =] $po->add_flag('php-format');
+    print $po->dump();
 
-        $quoted_string = $po->quote($string);
-        $string = $po->dequote($quoted_string);
+    $quoted_string = $po->quote($string);
+    $string = $po->dequote($quoted_string);
+    $string = Locale::PO->dequote($quoted_string, $eol);
 
-        $aref = Locale::PO->load_file_asarray(<filename>);
-        $href = Locale::PO->load_file_ashash(<filename>);
-        Locale::PO->save_file_fromarray(<filename>,$aref);
-        Locale::PO->save_file_fromhash(<filename>,$href);
+    $aref = Locale::PO->load_file_asarray(<filename>);
+    $href = Locale::PO->load_file_ashash(<filename>);
+    Locale::PO->save_file_fromarray(<filename>, $aref);
+    Locale::PO->save_file_fromhash(<filename>, $href);
 
 =head1 DESCRIPTION
 
@@ -595,14 +621,18 @@ interface in which each entry in a .po file is a Locale::PO object.
 
 =item new
 
-        my Locale::PO $po = new Locale::PO;
-        my Locale::PO $po = new Locale::PO(%options);
+    my $po = Locale::PO->new();
+    my $po = Locale::PO->new(%options);
+
+Specify an eol or accept the default "\n".
+
+    eol => "\r\n"
 
 Create a new Locale::PO object to represent a po entry.
 You can optionally set the attributes of the entry by passing
 a list/hash of the form:
 
-        -option=>value, -option=>value, etc.
+    -option=>value, -option=>value, etc.
 
 Where options are msgid, msgstr, msgctxt, comment, automatic, reference,
 fuzzy, c-format and php-format. See accessor methods below.
@@ -610,14 +640,21 @@ fuzzy, c-format and php-format. See accessor methods below.
 To generate a po file header, add an entry with an empty
 msgid, like this:
 
-        $po = new Locale::PO(-msgid=>'', -msgstr=>
-                "Project-Id-Version: PACKAGE VERSION\\n" .
-                "PO-Revision-Date: YEAR-MO-DA HO:MI +ZONE\\n" .
-                "Last-Translator: FULL NAME <EMAIL@ADDRESS>\\n" .
-                "Language-Team: LANGUAGE <LL@li.org>\\n" .
-                "MIME-Version: 1.0\\n" .
-                "Content-Type: text/plain; charset=CHARSET\\n" .
-                "Content-Transfer-Encoding: ENCODING\\n");
+    $po = Locale::PO->new(
+        -msgid  => q{},
+        -msgstr =>
+            "Project-Id-Version: PACKAGE VERSION\\n"
+            . "PO-Revision-Date: YEAR-MO-DA HO:MI +ZONE\\n"
+            . "Last-Translator: FULL NAME <EMAIL@ADDRESS>\\n"
+            . "Language-Team: LANGUAGE <LL@li.org>\\n"
+            . "MIME-Version: 1.0\\n"
+            . "Content-Type: text/plain; charset=CHARSET\\n"
+            . "Content-Transfer-Encoding: ENCODING\\n",
+    );
+
+=item eol
+
+Set or get the eol string from the object.
 
 =item msgid
 
@@ -643,12 +680,12 @@ Get or set the translations if there are purals involved. Takes and
 returns a hashref where the keys are the 'N' case and the values are
 the strings. eg:
 
-        $po->msgstr_n(
-            {
-                0 => 'found %d plural translations',
-                1 => 'found %d singular translation',
-            }
-        );
+    $po->msgstr_n(
+        {
+            0 => 'found %d plural translations',
+            1 => 'found %d singular translation',
+        }
+    );
 
 This method expects the new strings in unquoted form but returns the current strings in quoted form.
 
@@ -710,21 +747,21 @@ This can take 3 values:
 
 =item has_flag
 
-        if ($po->has_flag('perl-format')) {
-                ...
-        }
+    if ($po->has_flag('perl-format')) {
+        ...
+    }
 
 Returns true if the flag exists in the entry's #~ comment
 
 =item add_flag
 
-        $po->add_flag('perl-format');
+    $po->add_flag('perl-format');
 
 Adds the flag to the #~ comment
 
 =item remove_flag
 
-        $po->remove_flag('perl-format');
+    $po->remove_flag('perl-format');
 
 Removes the flag from the #~ comment
 

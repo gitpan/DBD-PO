@@ -5,10 +5,7 @@ use warnings;
 
 use Test::DBD::PO::Defaults;
 use Test::More tests => 42;
-eval {
-    require Test::Differences;
-    Test::Differences->import('eq_or_diff');
-};
+eval 'use Test::Differences qw(eq_or_diff)';
 if ($@) {
     *eq_or_diff = \&is;
     diag('Module Test::Differences not installed');
@@ -23,7 +20,7 @@ my $dbh;
 # connext
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH",
+        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_charset=utf-8",
         undef,
         undef,
         {
@@ -220,8 +217,8 @@ msgstr ""
 "Project-Id-Version: Testproject\n"
 "POT-Creation-Date: no POT creation date\n"
 "PO-Revision-Date: no PO revision date\n"
-"Last-Translator: Steffen Winkler <steffenw@cpan.org>\n"
-"Language-Team: MyTeam <cpan@perl.org>\n"
+"Last-Translator: Steffen Winkler <steffenw@example.org>\n"
+"Language-Team: MyTeam <cpan@example.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"

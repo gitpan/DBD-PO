@@ -11,7 +11,7 @@ use DBD::PO::Statement;
 use DBD::PO::Table;
 use DBD::PO::st;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 our $drh = ();       # holds driver handle once initialised
 our $err = 0;        # holds error code   for DBI::err
@@ -26,22 +26,23 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 103 2008-07-30 19:54:43Z steffenw $
+$Id: PO.pm 183 2008-09-05 19:56:55Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
 =head1 VERSION
 
-0.06
+0.07
 
 =head1 SYNOPSIS
 
 =head2 connect
 
-    use DBI;
+    use Carp qw(croak);
+    use DBI ();
     use Socket qw($LF);
 
-    $dbh = DBI->connect(
+    my $dbh = DBI->connect(
         'DBI:PO:'
         . 'f_dir=dir_x;'      # optional:
                               #  The default database is './',
@@ -54,13 +55,21 @@ $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD
                               #  The default 'po_eol' (po end of line)
                               #  is network typical like 'use Socket qw($CRLF)',
                               #  here set to $LF like 'use Socket qw($LF)'.
-        . 'charset=utf-8',    # optional:
-                              #  The default 'charset' is 'utf-8',
-                              #  here set to 'utf-8' unnecessary.
+        . 'po_charset=utf-8', # optional:
+                              #  Write nothing for 'iso-8859-1' files
+                              #  and use bytes internal.
+                              #  Write 'utf-8' for 'utf-8' files
+                              #  and use unicode chars internal.
+                              #  Write 'iso-8859-1' for 'iso-8859-1' files
+                              #  and use unicode chars internal
+                              #  and so on for other charsets.
         undef,                # Username is not used.
         undef,                # Password is not used.
-        { RaiseError => 1 },  # The easy way to handle exceptions.
-    ) or die 'Cannot connect: ' . $DBI->errstr();
+        {
+            RaiseError => 1,  # The easy way to handle exceptions.
+            PrintError => 0,  # No extra console output.
+        },
+    ) or croak 'Cannot connect: ' . DBI->errstr();
 
 =head2 create table
 
@@ -161,12 +170,12 @@ Full example:
             # last translator name and mail address
             [
                 'Steffen Winkler',
-                'steffenw@cpan.org',
+                'steffenw@example.org',
             ],
             # language team, name and mail address
             [
                 'MyTeam',
-                'cpan@perl.org',
+                'cpan@example.org',
             ],
             # undef to accept the defaut settings
             undef, # mime version (1.0)
@@ -189,7 +198,7 @@ Full example:
 Write the header row always at first!
 
     use Socket qw($CRLF);
-    my $separator = $CRLF;
+    my $separator = $CRLF; # but it is more easy to use \n as separator
 
     my $header_comment = join(
         $separator,
@@ -237,15 +246,89 @@ string must be escaped, even if it doesn't contain binary data.
 
 =head2 read the header
 
+=head3 easy
+
+=head4 read only 1 header information
+
+Scalar to Scalar mapping.
+
+    my $charset = $dhh->func(
+        {table => 'table_name'},
+        'charset',
+        'get_header_msgstr_data',
+    );
+
+=head4 read more header informations
+
+Arrayref to arrayref mapping.
+
+    my $array_ref = @{
+        $dbh->func(
+            {table => 'table_name'},
+            [qw(charset Project-Id-Version)],
+            'get_header_msgstr_data',
+        )
+    };
+    my ($charset, $project_id_version) = @{$array_ref};
+
+=head3 not easy (do not use)
+
+    # read the header msgstr
     $sth = $dbh->prepare(<<'EOT');
         SELECT msgstr
         FROM   table.po
         WHERE  msgid = ''
     EOT
-
     $sth->execute();
-
     ($header_msgstr) = $sth->fetchrow_array();
+
+    # extract the header data
+    my $header_struct = $dbh->func(
+        $header_msgstr,
+        # function name
+        'split_header_msgstr',
+    );
+
+    # get values by name
+    my $charset = $dhh->func(
+        $header_struct,
+        'charset',
+        'get_header_msgstr_data',
+    );
+
+=head3 not easy, implicit call of split_header_msgstr (do not use)
+
+    # read the header msgstr
+    $sth = $dbh->prepare(<<'EOT');
+        SELECT msgstr
+        FROM   table.po
+        WHERE  msgid = ''
+    EOT
+    $sth->execute();
+    ($header_msgstr) = $sth->fetchrow_array();
+
+    # get values by name
+    my $charset = $dhh->func(
+        $header_msgstr,
+        'charset',
+        'get_header_msgstr_data',
+    );
+
+=head3 not easy, implicit SQL call  (do not use)
+
+    # extract the header data
+    my $header_struct = $dbh->func(
+        {table => 'table_name'},
+        # function name
+        'split_header_msgstr',
+    );
+
+    # get values by name
+    my $charset = $dhh->func(
+        $header_struct,
+        'charset',
+        'get_header_msgstr_data',
+    );
 
 =head2 read a row
 
@@ -264,14 +347,6 @@ string must be escaped, even if it doesn't contain binary data.
     );
 
     my ($msgstr) = $sth->fetchrow_array();
-
-=head3 extract the header data
-
-    my $header_struct = $dbh->func(
-        $header_msgstr,
-        # function name
-        'split_header_msgstr',
-    );
 
 =head2 update rows
 
@@ -300,6 +375,11 @@ For conditional execution use DROP TABLE IF EXISTS statement.
 =head2 disconnect
 
     $dbh->disconnect();
+
+=head1 EXAMPLE
+
+Inside of this Distribution is a directory named example.
+Run this *.pl files.
 
 =head1 DESCRIPTION
 
@@ -391,7 +471,7 @@ Steffen Winkler
 
 Copyright (c) 2008,
 Steffen Winkler
-C<< <steffenw@cpan.org> >>.
+C<< <steffenw at cpan.org> >>.
 All rights reserved.
 
 This module is free software;

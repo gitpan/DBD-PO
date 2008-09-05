@@ -12,7 +12,7 @@ BEGIN {
 
 # build table
 my $dbh = DBI->connect(
-    "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH",
+    "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_charset=utf-8",
     undef,
     undef,
     {
@@ -33,7 +33,7 @@ sub create_table {
     my $param = {table_number => shift};
 
     my $dbh = $param->{dbh} = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH",
+        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_charset=utf-8",
         undef,
         undef,
         {

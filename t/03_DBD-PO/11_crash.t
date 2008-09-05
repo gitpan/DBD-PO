@@ -15,7 +15,7 @@ my $dbh;
 # build table
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH",
+        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_charset=utf-8",
         undef,
         undef,
         {
@@ -162,8 +162,7 @@ like(
 );
 
 # drop table
-SKIP:
-{
+SKIP: {
     skip('drop table', 2)
         if ! $Test::DBD::PO::Defaults::DROP_TABLE;
 

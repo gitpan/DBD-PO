@@ -12,6 +12,7 @@ WriteMakefile
                            'Params::Validate' => 0,
                            'Test::Simple' => 0,
                            'SQL::Statement' => 0,
+                           'Encode' => 0,
                            'DBI' => 0
                          }
         )

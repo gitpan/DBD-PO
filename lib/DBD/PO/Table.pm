@@ -41,9 +41,8 @@ sub push_row ($$$) {
     while (@{$fields} && ! defined $fields->[$#{$fields}]) {
         pop @{$fields};
     }
-    if (! $po->print($fh, $fields)) {
-        croak "Error while writing file $self->{file}: $!";
-    }
+    $po->print($fh, $fields)
+        or croak "Error while writing file $self->{file}: $!";
 
     return 1;
 }

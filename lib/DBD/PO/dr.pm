@@ -5,8 +5,7 @@ use warnings;
 
 use DBD::File;
 use parent qw(-norequire DBD::File::dr);
-
-use Socket qw($LF $CRLF);
+use DBD::PO::Text::PO;
 
 my $PV = 0;
 my $IV = 1;
@@ -42,61 +41,6 @@ sub connect ($$;$$$) {
 
     return $dbh;
 }
-
-our $SEPARATOR_DEFAULT = $LF;
-our $EOL_DEFAULT       = $CRLF;
-our $CHARSET_DEFAULT   = 'utf-8';
-
-my @cols = (
-    [ qw( msgid      -msgid      msgid      ) ],
-    [ qw( msgstr     -msgstr     msgstr     ) ],
-    [ qw( comment    -comment    comment    ) ],
-    [ qw( automatic  -automatic  automatic  ) ],
-    [ qw( reference  -reference  reference  ) ],
-    [ qw( obsolete   -obsolete   obsolete   ) ],
-    [ qw( fuzzy      -fuzzy      fuzzy      ) ],
-    [ qw( c_format   -c-format   c_format   ) ],
-    [ qw( php_format -php-format php_format ) ],
-);
-our @COL_NAMES       = map {$_->[0]} @cols;
-our @COL_PARAMETERS  = map {$_->[1]} @cols;
-our @COL_METHODS     = map {$_->[2]} @cols;
-
-my @header = (
-    [ project_id_version        => 'Project-Id-Version: %s'        ],
-    [ pot_creation_date         => 'POT-Creation-Date: %s'         ],
-    [ po_revision_date          => 'PO-Revision-Date: %s'          ],
-    [ last_translator           => 'Last-Translator: %s <%s>'      ],
-    [ language_team             => 'Language-Team: %s <%s>'        ],
-    [ mime_version              => 'MIME-Version: %s'              ],
-    [ content_type              => 'Content-Type: %s; charset=%s'  ],
-    [ content_transfer_encoding => 'Content-Transfer-Encoding: %s' ],
-    [ extended                  => '%s: %s'                        ],
-);
-our @HEADER_KEYS     = map {$_->[0]} @header;
-our @HEADER_FORMATS  = map {$_->[1]} @header;
-our @HEADER_DEFAULTS = (
-    undef,
-    undef,
-    undef,
-    undef,
-    undef,
-    '1.0',
-    ['text/plain', $CHARSET_DEFAULT ],
-    '8bit',
-    undef,
-);
-our @HEADER_REGEX = (
-    qr{\A \QProject-Id-Version:\E        \s (.*) \z}xms,
-    qr{\A \QPOT-Creation-Date:\E         \s (.*) \z}xms,
-    qr{\A \QPO-Revision-Date:\E          \s (.*) \z}xms,
-    qr{\A \QLast-Translator:\E           \s ([^<]*) \s < ([^>]*) > }xms,
-    qr{\A \QLanguage-Team:\E             \s ([^<]*) \s < ([^>]*) > }xms,
-    qr{\A \QMIME-Version:\E              \s (.*) \z}xms,
-    qr{\A \QContent-Type:\E              \s ([^;]*); \s charset=(\S*) }xms,
-    qr{\A \QContent-Transfer-Encoding:\E \s (.*) \z}xms,
-    qr{\A ([^:]*):                       \s (.*) \z}xms,
-);
 
 1;
 

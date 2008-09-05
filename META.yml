@@ -1,8 +1,8 @@
 ---
 name: DBD-PO
-version: 0.06
+version: 0.07
 author:
-  - 'Steffen Winkler <steffenw@cpan.org>'
+  - 'Steffen Winkler <steffenw at cpan.org>'
 abstract: 'DBD::PO - DBI driver for PO files'
 license: perl
 resources:
@@ -13,6 +13,7 @@ requires:
   SQL::Statement: 0
   parent: 0
 build_requires:
+  Encode: 0
   Test::Simple: 0
 recommends:
   DBD::File: 0
@@ -24,7 +25,7 @@ recommends:
 provides:
   DBD::PO:
     file: lib/DBD/PO.pm
-    version: 0.06
+    version: 0.07
   DBD::PO::Locale::PO:
     file: lib/DBD/PO/Locale/PO.pm
     version: 0.21.01

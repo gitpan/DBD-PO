@@ -6,11 +6,46 @@ use warnings;
 use Carp qw(croak);
 use Params::Validate qw(:all);
 use DBD::PO::Locale::PO;
+use Socket qw($CRLF);
 
-my $array_from_anything = sub {
+our $EOL_DEFAULT       = $CRLF;
+our $SEPARATOR_DEFAULT = "\n";
+our $CHARSET_DEFAULT   = 'iso-8859-1';
+
+my @cols = (
+    [ qw( msgid      -msgid      msgid      ) ],
+    [ qw( msgstr     -msgstr     msgstr     ) ],
+    [ qw( comment    -comment    comment    ) ],
+    [ qw( automatic  -automatic  automatic  ) ],
+    [ qw( reference  -reference  reference  ) ],
+    [ qw( obsolete   -obsolete   obsolete   ) ],
+    [ qw( fuzzy      -fuzzy      fuzzy      ) ],
+    [ qw( c_format   -c-format   c_format   ) ],
+    [ qw( php_format -php-format php_format ) ],
+);
+our @COL_NAMES       = map {$_->[0]} @cols;
+our @COL_PARAMETERS  = map {$_->[1]} @cols;
+our @COL_METHODS     = map {$_->[2]} @cols;
+
+sub _dequote {
+    caller eq __PACKAGE__
+        or croak 'Do not call a private sub';
+    my $string = shift;
+
+    return if $string eq 'NULL';
+#    $string =~ s{\\\\}{\\}xmsg;
+#    $string =~ s{\\'}{'}xmsg;
+
+    return $string;
+}
+
+sub _array_from_anything {
+    caller eq __PACKAGE__
+        or croak 'Do not call a private sub';
     my ($self, $anything) = @_;
 
     my @array = map {
+        $_ = _dequote $_;
         split m{\Q$self->{separator}\E}xms, $_;
     } ref $anything eq 'ARRAY'
       ? @{$anything}
@@ -30,9 +65,9 @@ sub new {
     $options = validate_with(
         params => $options,
         spec => {
-            eol       => {default => $DBD::PO::dr::EOL_DEFAULT},
-            separator => {default => $DBD::PO::dr::SEPARATOR_DEFAULT},
-            charset   => {default => $DBD::PO::dr::CHARSET_DEFAULT},
+            eol       => {default => $EOL_DEFAULT},
+            separator => {default => $SEPARATOR_DEFAULT},
+            charset   => {optional => 1},
         },
         called => "2nd parameter of new('$class', \$parameter)",
     );
@@ -48,12 +83,14 @@ sub print {
         {type => ARRAYREF},
     );
 
-    $file->binmode(":encoding($self->{charset})")
-        or croak "binmode: $!";
+    if ($self->{charset}) {
+        $file->binmode(":encoding($self->{charset})")
+            or croak "binmode: $!";
+    }
     my %line;
-    for my $index (0 .. $#DBD::PO::dr::COL_NAMES) {
-        my $parameter = $DBD::PO::dr::COL_PARAMETERS[$index];
-        my $values    = $array_from_anything->($self, $col_ref->[$index]);
+    for my $index (0 .. $#COL_NAMES) {
+        my $parameter = $COL_PARAMETERS[$index];
+        my $values    = _array_from_anything($self, $col_ref->[$index]);
         if (
            $parameter eq '-comment'
            || $parameter eq '-automatic'
@@ -91,7 +128,7 @@ sub print {
         }
         else {
             if (@{$values}) {
-                $line{$parameter} = join "\\n", @{$values};
+                $line{$parameter} = join "\n", @{$values};
                 if (! $file->tell()) {
                     if ($parameter eq '-msgid') {
                         croak 'A header has no msgid';
@@ -134,8 +171,10 @@ sub getline {
         {isa => 'IO::File'},
     );
 
-    $file->binmode(":encoding($self->{charset})")
-        or croak "binmode: $!";
+    if ($self->{charset}) {
+        $file->binmode(":encoding($self->{charset})")
+            or croak "binmode: $!";
+    }
     if (! $self->{po_iterator}) {
         $self->{po_iterator}
             = DBD::PO::Locale::PO->load_file_asarray($file, $self->{eol});
@@ -150,16 +189,21 @@ sub getline {
     my @cols;
     my $index = 0;
     METHOD:
-    for my $method (@DBD::PO::dr::COL_METHODS) {
+    for my $method (@COL_METHODS) {
         if (
-           $method eq 'comment'
-           || $method eq 'automatic'
-           || $method eq 'reference'
+            $method eq 'comment'
+            || $method eq 'automatic'
+            || $method eq 'reference'
         ) {
+            my $comment = $po->$method();
             $cols[$index]
-                = join  $self->{separator},
-                  split m{\Q$self->{eol}\E}xms,
-                        $po->dequote( $po->$method() );
+                = defined $comment
+                  ? (
+                      join  $self->{separator},
+                      split m{\Q$self->{eol}\E}xms,
+                      $comment
+                  )
+                  : q{};
         }
         elsif (
             $method eq 'obsolete'
