@@ -3,7 +3,11 @@
 use strict;
 use warnings;
 
-use Test::DBD::PO::Defaults;
+use Test::DBD::PO::Defaults qw(
+    $PATH $TRACE $DROP_TABLE
+    trace_file_name
+    $TABLE_12 $FILE_12
+);
 use Test::More tests => 22;
 
 BEGIN {
@@ -12,7 +16,7 @@ BEGIN {
 
 # build table
 my $dbh = DBI->connect(
-    "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_charset=utf-8",
+    "dbi:PO:f_dir=$PATH;po_charset=utf-8",
     undef,
     undef,
     {
@@ -23,8 +27,8 @@ my $dbh = DBI->connect(
 );
 isa_ok($dbh, 'DBI::db', 'connect');
 
-if ($Test::DBD::PO::Defaults::TRACE) {
-    open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
+if ($TRACE) {
+    open my $file, '>', trace_file_name();
     $dbh->trace(4, $file);
 }
 
@@ -33,7 +37,7 @@ sub create_table {
     my $param = {table_number => shift};
 
     my $dbh = $param->{dbh} = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_charset=utf-8",
+        "dbi:PO:f_dir=$PATH;po_charset=utf-8",
         undef,
         undef,
         {
@@ -45,8 +49,8 @@ sub create_table {
     isa_ok($dbh, 'DBI::db', "connect $param->{table_number}");
 
     @{$param}{qw(table table_file)} = (
-        $Test::DBD::PO::Defaults::TABLE_12,
-        $Test::DBD::PO::Defaults::FILE_12,
+        $TABLE_12,
+        $FILE_12,
     );
     for my $name (@{$param}{qw(table table_file)}) {
         $name =~ s{\?}{$param->{table_number}}xms;
@@ -158,7 +162,7 @@ sub drop_table {
     SKIP:
     {
         skip('drop table', 2)
-            if ! $Test::DBD::PO::Defaults::DROP_TABLE;
+            if ! $DROP_TABLE;
 
         my ($table, $table_file) = @{$param}{qw(table table_file)};
 

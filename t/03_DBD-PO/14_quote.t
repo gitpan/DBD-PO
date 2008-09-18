@@ -3,8 +3,12 @@
 use strict;
 use warnings;
 
-use Test::DBD::PO::Defaults;
-use Test::More tests => 16;
+use Test::DBD::PO::Defaults qw(
+    $PATH $TRACE $DROP_TABLE
+    trace_file_name
+    $TABLE_14 $FILE_14
+);
+use Test::More tests => 17;
 eval 'use Test::Differences qw(eq_or_diff)';
 if ($@) {
     *eq_or_diff = \&is;
@@ -70,7 +74,7 @@ my $dbh;
 # connect
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_charset=utf-8",
+        "dbi:PO:f_dir=$PATH;po_charset=utf-8;po_eol=\n",
         undef,
         undef,
         {
@@ -81,30 +85,30 @@ my $dbh;
     );
     isa_ok($dbh, 'DBI::db', 'connect');
 
-    if ($Test::DBD::PO::Defaults::TRACE) {
-        open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
+    if ($TRACE) {
+        open my $file, '>', trace_file_name();
         $dbh->trace(4, $file);
     }
 
     my $result = $dbh->do(<<"EO_SQL");
-        CREATE TABLE $Test::DBD::PO::Defaults::TABLE_14 (
+        CREATE TABLE $TABLE_14 (
             msgid VARCHAR,
             msgstr VARCHAR
         )
 EO_SQL
     is($result, '0E0', 'create table');
-    ok(-e $Test::DBD::PO::Defaults::FILE_14, 'table file found');
+    ok(-e $FILE_14, 'table file found');
 }
 
 # quote
 {
-    my @data = qw(
-        \  '\\\\'
-        \0 '\\\\0'
-        "  '"'
-        '  '\\''
-        \n '\\\\n'
-        \r '\\\\r'
+    my @data = (
+        qq{\0} => qq{'\0'},
+        qq{\\} => qq{'_Q_U_O_T_E_D_:\\\\'},
+        qq{"}  => qq{'"'},
+        qq{'}  => qq{'_Q_U_O_T_E_D_:\\''},
+        qq{\n} => qq{'\n'},
+        qq{\r} => qq{'\r'},
     );
 
     while (my ($raw, $quoted) = splice @data, 0, 2) {
@@ -123,7 +127,7 @@ EO_SQL
         'build_header_msgstr',
     );
     my $result = $dbh->do(<<"EO_SQL", undef, $msgstr);
-        INSERT INTO $Test::DBD::PO::Defaults::TABLE_14 (
+        INSERT INTO $TABLE_14 (
             msgstr
         ) VALUES (?)
 EO_SQL
@@ -135,7 +139,7 @@ EO_SQL
     my $msgid  = 'id_1';
     my $msgstr = $test_string;
     my $result = $dbh->do(<<"EO_SQL", undef, $msgid, $msgstr);
-        INSERT INTO $Test::DBD::PO::Defaults::TABLE_14 (
+        INSERT INTO $TABLE_14 (
             msgid,
             msgstr
         ) VALUES (?, ?)
@@ -144,13 +148,11 @@ EO_SQL
 }
 
 # add line using method quote
-TODO: {
-    local $TODO = '...->quote(...) not finished';
-    last TODO;
+{
     my $msgid  = $dbh->quote('id_2');
     my $msgstr = $dbh->quote($test_string);
     my $result = $dbh->do(<<"EO_SQL");
-        INSERT INTO $Test::DBD::PO::Defaults::TABLE_14 (
+        INSERT INTO $TABLE_14 (
             msgid,
             msgstr
         ) VALUES ($msgid, $msgstr)
@@ -171,14 +173,13 @@ msgid "id_1"
 msgstr $po_string
 
 EOT
-    $po .= <<"EOT" if 0;
+    $po .= <<"EOT";
 msgid "id_2"
-msgstr ""
-$po_string
+msgstr $po_string
 
 EOT
     local $/ = ();
-    open my $file1, '< :encoding(utf-8)', $Test::DBD::PO::Defaults::TABLE_14 or die $!;
+    open my $file1, '< :encoding(utf-8)', $TABLE_14 or die $!;
     my $content1 = <$file1>;
     open my $file2, '< :encoding(utf-8)', \($po) or die $!;
     my $content2 = <$file2>;
@@ -188,11 +189,11 @@ EOT
 # drop table
 SKIP: {
     skip('drop table', 2)
-        if ! $Test::DBD::PO::Defaults::DROP_TABLE;
+        if ! $DROP_TABLE;
 
     my $result = $dbh->do(<<"EO_SQL");
-        DROP TABLE $Test::DBD::PO::Defaults::TABLE_14
+        DROP TABLE $TABLE_14
 EO_SQL
     is($result, '-1', 'drop table');
-    ok(! -e $Test::DBD::PO::Defaults::FILE_14, 'table file deleted');
+    ok(! -e $FILE_14, 'table file deleted');
 }

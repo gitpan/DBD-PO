@@ -15,6 +15,7 @@ lib/Test/DBD/PO/Defaults.pm
 MANIFEST			This list of files
 README
 t/01_Locale-PO/01_quote.t
+t/01_Locale-PO/02_without_emty_lines.t
 t/02_Text-PO/01_quote.t
 t/03_DBD-PO/01_create_table.t
 t/03_DBD-PO/02_fill_table.t
@@ -29,6 +30,8 @@ t/03_DBD-PO/12_more_tables.t
 t/03_DBD-PO/13_charsets.t
 t/03_DBD-PO/14_quote.t
 t/03_DBD-PO/15_header_msgstr_hash.t
+t/03_DBD-PO/21_example_write.t
+t/03_DBD-PO/22_example_read.t
 t/pod.t
 t/pod_coverage.t
 Makefile.PL

@@ -7,7 +7,7 @@ use DBD::File;
 use parent qw(-norequire DBD::File::Statement);
 
 use Carp qw(croak);
-use DBD::PO::Text::PO;
+use DBD::PO::Text::PO qw($EOL_DEFAULT $SEPARATOR_DEFAULT @COL_NAMES);
 
 sub open_table {
     my($self, $data, $table, $createMode, $lockMode) = @_;
@@ -29,12 +29,12 @@ sub open_table {
                          ? $meta->{eol}
                          : exists $dbh->{po_eol}
                            ? $dbh->{po_eol}
-                           : $DBD::PO::Text::PO::EOL_DEFAULT,
+                           : $EOL_DEFAULT,
             separator => exists $meta->{separator}
                          ? $meta->{separator}
                          : exists $dbh->{po_separator}
                            ? $dbh->{po_separator}
-                           : $DBD::PO::Text::PO::SEPARATOR_DEFAULT,
+                           : $SEPARATOR_DEFAULT,
             charset   => exists $meta->{charset}
                          ? $meta->{charset}
                          : $dbh->{po_charset}
@@ -80,7 +80,7 @@ sub open_table {
             }
             if ($skipRows--) {
 #                if (! ($array = $tbl->fetch_row($data))) {
-                if (! ($array = \@DBD::PO::Text::PO::COL_NAMES)) {
+                if (! ($array = \@COL_NAMES)) {
                     croak 'Missing header';
                 }
                 $tbl->{col_names} = $array;

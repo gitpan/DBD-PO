@@ -8,6 +8,14 @@ use Params::Validate qw(:all);
 use DBD::PO::Locale::PO;
 use Socket qw($CRLF);
 
+use parent qw(Exporter);
+our @EXPORT_OK = qw(
+    $EOL_DEFAULT
+    $SEPARATOR_DEFAULT
+    $CHARSET_DEFAULT
+    @COL_NAMES
+);
+
 our $EOL_DEFAULT       = $CRLF;
 our $SEPARATOR_DEFAULT = "\n";
 our $CHARSET_DEFAULT   = 'iso-8859-1';
@@ -33,8 +41,9 @@ sub _dequote {
     my $string = shift;
 
     return if $string eq 'NULL';
-#    $string =~ s{\\\\}{\\}xmsg;
-#    $string =~ s{\\'}{'}xmsg;
+    if ($string =~ s{\A _Q_U_O_T_E_D_:}{}xms) {
+        $string =~ s{\\\\}{\\}xmsg;
+    }
 
     return $string;
 }
@@ -64,7 +73,7 @@ sub new {
     );
     $options = validate_with(
         params => $options,
-        spec => {
+        spec   => {
             eol       => {default => $EOL_DEFAULT},
             separator => {default => $SEPARATOR_DEFAULT},
             charset   => {optional => 1},
@@ -72,21 +81,32 @@ sub new {
         called => "2nd parameter of new('$class', \$parameter)",
     );
 
+    if ($options->{charset}) {
+        $options->{encoding} = ":encoding($options->{charset})";
+    }
+
     return bless $options, $class;
 }
 
-sub print {
-    my ($self, $file, $col_ref) = validate_pos(
-        @_,
-        {isa => __PACKAGE__},
-        {isa => 'IO::File'},
-        {type => ARRAYREF},
-    );
+sub _binmode {
+    my ($self, $file) = @_;
 
-    if ($self->{charset}) {
-        $file->binmode(":encoding($self->{charset})")
+    if (
+        exists $self->{encoding}
+        && ! exists $self->{file_encoding}->{$file}
+    ) {
+        binmode $file, $self->{encoding}
             or croak "binmode: $!";
+        $self->{file_encoding}->{$file} = $self->{encoding};
     }
+
+    return;
+}
+
+sub print {
+    my ($self, $file, $col_ref) = @_;
+
+    $self->_binmode($file);
     my %line;
     for my $index (0 .. $#COL_NAMES) {
         my $parameter = $COL_PARAMETERS[$index];
@@ -129,7 +149,7 @@ sub print {
         else {
             if (@{$values}) {
                 $line{$parameter} = join "\n", @{$values};
-                if (! $file->tell()) {
+                if (! tell $file) {
                     if ($parameter eq '-msgid') {
                         croak 'A header has no msgid';
                     }
@@ -141,10 +161,11 @@ sub print {
                 }
             }
             else {
-                if ($parameter eq '-msgid' && $file->tell()) {
+                if ($parameter eq '-msgid' && tell $file) {
                     croak 'A line has to have a msgid';
                 }
-                elsif ($parameter eq '-msgstr' && ! $file->tell()) {
+                elsif ($parameter eq '-msgstr' && ! tell $file
+                ) {
                     croak 'A header has to have a msgstr';
                 }
             }
@@ -157,24 +178,15 @@ sub print {
         '-msgstr' => q{},
         %line,
     )->dump();
-    $file->print(
-        $line,
-    );
+    print $file $line;
 
     return 1;
 }
 
 sub getline {
-    my ($self, $file) = validate_pos(
-        @_,
-        {isa => __PACKAGE__},
-        {isa => 'IO::File'},
-    );
+    my ($self, $file) = @_;
 
-    if ($self->{charset}) {
-        $file->binmode(":encoding($self->{charset})")
-            or croak "binmode: $!";
-    }
+    $self->_binmode($file);
     if (! $self->{po_iterator}) {
         $self->{po_iterator}
             = DBD::PO::Locale::PO->load_file_asarray($file, $self->{eol});
@@ -230,7 +242,7 @@ sub getline {
             $cols[$index]
                 = join  $self->{separator},
                   split m{\\n}xms,
-                        $po->dequote( $po->$method() );
+                        $po->$method();
         }
         ++$index;
     }

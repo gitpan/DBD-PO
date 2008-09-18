@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::DBD::PO::Defaults;
+use Test::DBD::PO::Defaults qw($FILE_LOCALE_PO_01 $DROP_TABLE);
 use Test::More tests => 13;
 eval 'use Test::Differences qw(eq_or_diff)';
 if ($@) {
@@ -72,7 +72,7 @@ my $po_string = quote($test_string, "\n");
 
     ok(
         $file->open(
-            $Test::DBD::PO::Defaults::FILE_LOCALE_PO,
+            $FILE_LOCALE_PO_01,
             '> :encoding(utf-8)',
         ),
         'open file',
@@ -100,7 +100,7 @@ EOT
     local $/ = ();
     open my $file1,
          '< :encoding(utf-8)',
-         $Test::DBD::PO::Defaults::FILE_LOCALE_PO or die $!;
+         $FILE_LOCALE_PO_01 or die $!;
     my $content1 = <$file1>;
     open my $file2, '< :encoding(utf-8)', \($po) or die $!;
     my $content2 = <$file2>;
@@ -114,7 +114,7 @@ EOT
 
     ok(
         $file->open(
-            $Test::DBD::PO::Defaults::FILE_LOCALE_PO,
+            $FILE_LOCALE_PO_01,
             '< :encoding(utf-8)',
         ),
         'open file',
@@ -122,15 +122,15 @@ EOT
     my $array = DBD::PO::Locale::PO->load_file_asarray($file);
     my $po = $array->[0];
     isa_ok($po, 'DBD::PO::Locale::PO');
-    eq_or_diff($po->dequote( $po->msgid()  ), 'test',       'msgid');
-    eq_or_diff($po->dequote( $po->msgstr() ), $test_string, 'msgstr');
+    eq_or_diff($po->msgid(),  'test',       'msgid');
+    eq_or_diff($po->msgstr(), $test_string, 'msgstr');
 }
 
 # drop table
 SKIP: {
     skip('delete file', 1)
-        if ! $Test::DBD::PO::Defaults::DROP_TABLE;
+        if ! $DROP_TABLE;
 
-    unlink $Test::DBD::PO::Defaults::FILE_LOCALE_PO;
-    ok(! -e $Test::DBD::PO::Defaults::FILE_LOCALE_PO, 'table file deleted');
+    unlink $FILE_LOCALE_PO_01;
+    ok(! -e $FILE_LOCALE_PO_01, 'table file deleted');
 }

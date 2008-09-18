@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = '0.21.01';
 
-use Carp;
+use Carp qw(croak);
 
 sub new {
     my $this    = shift;
@@ -15,26 +15,14 @@ sub new {
     my $self = bless {}, $class;
     $self->eol( $options{eol} );
     $self->_flags({});
-    $self->msgid( $options{'-msgid'} )
-        if defined( $options{'-msgid'} );
-    $self->msgid_plural( $options{'-msgid_plural'} )
-        if defined( $options{'-msgid_plural'} );
-    $self->msgstr( $options{'-msgstr'} )
-        if defined( $options{'-msgstr'} );
-    $self->msgstr_n( $options{'-msgstr_n'} )
-        if defined( $options{'-msgstr_n'} );
-    $self->msgctxt( $options{'-msgctxt'} )
-        if defined( $options{'-msgctxt'} );
-    $self->comment( $options{'-comment'} )
-        if defined( $options{'-comment'} );
-    $self->fuzzy( $options{'-fuzzy'} )
-        if defined( $options{'-fuzzy'} );
-    $self->automatic( $options{'-automatic'} )
-        if defined( $options{'-automatic'} );
-    $self->reference( $options{'-reference'} )
-        if defined( $options{'-reference'} );
-    $self->obsolete( $options{'-obsolete'} )
-        if defined( $options{'-obsolete'} );
+    for (qw(
+        msgid msgid_plural msgstr msgstr_n msgctxt
+        comment fuzzy automatic reference obsolete
+        loaded_line_number
+    )) {
+        $self->$_( $options{"-$_"} )
+            if defined $options{"-$_"};
+    }
     $self->c_format(1)
         if defined( $options{'-c-format'} );
     $self->c_format(0)
@@ -43,8 +31,6 @@ sub new {
         if defined( $options{'-php-format'} );
     $self->php_format(0)
         if defined( $options{'-no-php-format'} );
-    $self->loaded_line_number( $options{'-loaded_line_number'} )
-        if defined( $options{'-loaded_line_number'} );
 
     return $self;
 }
@@ -63,25 +49,25 @@ sub eol {
 sub msgctxt {
     my $self = shift;
 
-    @_ ? $self->{msgctxt} = $self->quote(shift) : $self->{msgctxt};
+    @_ ? $self->{msgctxt} = shift : $self->{msgctxt};
 }
 
 sub msgid {
     my $self = shift;
 
-    @_ ? $self->{msgid} = $self->quote(shift) : $self->{msgid};
+    @_ ? $self->{msgid} = shift : $self->{msgid};
 }
 
 sub msgid_plural {
     my $self = shift;
 
-    @_ ? $self->{msgid_plural} = $self->quote(shift) : $self->{msgid_plural};
+    @_ ? $self->{msgid_plural} = shift : $self->{msgid_plural};
 }
 
 sub msgstr {
     my $self = shift;
 
-    @_ ? $self->{msgstr} = $self->quote(shift) : $self->{msgstr};
+    @_ ? $self->{msgstr} = shift : $self->{msgstr};
 }
 
 sub msgstr_n {
@@ -99,10 +85,9 @@ sub msgstr_n {
         croak 'Keys to msgstr_n hashref must be numbers'
             if grep { m{\D}xms } keys %{$hashref};
 
-        # Quote all the values in the hashref.
-        $self->{msgstr_n}->{$_} = $self->quote( $hashref->{$_} )
-          for keys %{$hashref};
-
+        # Write all the values in the hashref.
+        $self->{msgstr_n}->{$_} = $hashref->{$_}
+            for keys %{$hashref};
     }
 
     return $self->{msgstr_n};
@@ -227,27 +212,27 @@ sub dump {
     my $obsolete = $self->obsolete() ? '#~ ' : q{};
     my $dump = q{};
     $dump .= $self->_dump_multi_comment( $self->comment(), "# " )
-        if $self->comment();
+        if defined $self->comment();
     $dump .= $self->_dump_multi_comment( $self->automatic(), "#. " )
-        if $self->automatic();
+        if defined $self->automatic();
     $dump .= $self->_dump_multi_comment( $self->reference(), "#: " )
-        if $self->reference();
+        if defined $self->reference();
 
     my $flags = join q{}, map {", $_"} sort keys %{ $self->_flags() };
     $dump .= "#$flags" . $self->eol()
         if $flags;
 
-    $dump .= "${obsolete}msgctxt " . $self->msgctxt()
-        if $self->msgctxt();
-    $dump .= "${obsolete}msgid " . $self->msgid();
-    $dump .= "${obsolete}msgid_plural " . $self->msgid_plural()
-        if $self->msgid_plural();
+    $dump .= "${obsolete}msgctxt " . $self->quote( $self->msgctxt() )
+        if defined $self->msgctxt();
+    $dump .= "${obsolete}msgid " . $self->quote( $self->msgid() );
+    $dump .= "${obsolete}msgid_plural " . $self->quote( $self->msgid_plural() )
+        if defined $self->msgid_plural();
 
-    $dump .= "${obsolete}msgstr " . $self->msgstr()
-        if $self->msgstr();
+    $dump .= "${obsolete}msgstr " . $self->quote( $self->msgstr() )
+        if defined $self->msgstr();
 
     if ( my $msgstr_n = $self->msgstr_n() ) {
-        $dump .= "${obsolete}msgstr[$_] " . $msgstr_n->{$_}
+        $dump .= "${obsolete}msgstr[$_] " . $self->quote( $msgstr_n->{$_} )
             for sort { $a <=> $b } keys %{$msgstr_n};
     }
 
@@ -405,165 +390,173 @@ sub _load_file {
     my $eol         = shift;
     my $ashash      = shift;
 
-    my $class  = ref $self || $self;
-    my ( @entries, %entries );
     my $line_number = 0;
-    my $po;
-    my %buffer;
-    my $last_buffer;
-
-    while (<$file_handle>) {
-        s{\Q$eol\E \z}{}xms;
-        $line_number++;
-        if (/^$/) {
-
-            # Empty line. End of an entry.
-
-            if ( defined($po) ) {
-                $po->msgctxt( $buffer{msgctxt} ) if defined $buffer{msgctxt};
-                $po->msgid( $buffer{msgid} ) if defined $buffer{msgid};
-                $po->msgid_plural( $buffer{msgid_plural} ) if defined $buffer{msgid_plural};
-                $po->msgstr( $buffer{msgstr} ) if defined $buffer{msgstr};
-                $po->msgstr_n( $buffer{msgstr_n} ) if defined $buffer{msgstr_n};
-
-                # ashash
-                if ($ashash) {
-                    if ( $po->_hash_key_ok(\%entries) ) {
-                        $entries{ $po->msgid } = $po;
-                    }
-                }
-                # asarray
-                else {
-                    push( @entries, $po );
-                }
-
-                undef $po;
-                undef $last_buffer;
-                %buffer = ();
-            }
-        }
-        elsif ( /^#\s+(.*)/ or /^#()$/ ) {
-
-            # Translator comments
-            $po = $class->new(eol => $eol, -loaded_line_number => $line_number ) unless defined($po);
-            if ( defined( $po->comment ) ) {
-                $po->comment( $po->comment . "$eol$1" );
-            }
-            else {
-                $po->comment($1);
-            }
-        }
-        elsif (/^#\.\s*(.*)/) {
-
-            # Automatic comments
-            $po = $class->new(eol => $eol, -loaded_line_number => $line_number ) unless defined($po);
-            if ( defined( $po->automatic ) ) {
-                $po->automatic( $po->automatic . "$eol$1" );
-            }
-            else {
-                $po->automatic($1);
-            }
-        }
-        elsif (/^#:\s+(.*)/) {
-
-            # reference
-            $po = $class->new(eol => $eol, -loaded_line_number => $line_number ) unless defined($po);
-            if ( defined( $po->reference ) ) {
-                $po->reference( $po->reference . "$eol$1" );
-            }
-            else {
-                $po->reference($1);
-            }
-        }
-        elsif (/^#,\s+(.*)/) {
-
-            # flags
-            my @flags = split /\s*[,]\s*/, $1;
-            $po = $class->new(eol => $eol, -loaded_line_number => $line_number ) unless defined($po);
-            foreach my $flag (@flags)
-            {
-                $po->add_flag($flag);
-            }
-        }
-        elsif (/^(#~\s+)?msgctxt\s+(.*)/) {
-            $po = $class->new(eol => $eol, -loaded_line_number => $line_number ) unless defined($po);
-            $buffer{msgctxt} = $self->dequote($2, $eol);
-            $last_buffer = \$buffer{msgctxt};
-            $po->obsolete(1) if $1;
-        }
-        elsif (/^(#~\s+)?msgid\s+(.*)/) {
-            $po = $class->new(eol => $eol, -loaded_line_number => $line_number ) unless defined($po);
-            $buffer{msgid} = $self->dequote($2, $eol);
-            $last_buffer = \$buffer{msgid};
-            $po->obsolete(1) if $1;
-        }
-        elsif (/^(#~\s+)?msgid_plural\s+(.*)/) {
-            $po = $class->new(eol => $eol, -loaded_line_number => $line_number ) unless defined($po);
-            $buffer{msgid_plural} = $self->dequote($2, $eol);
-            $last_buffer = \$buffer{msgid_plural};
-            $po->obsolete(1) if $1;
-        }
-        elsif (/^(?:#~\s+)?msgstr\s+(.*)/) {
-
-            # translated string
-            $buffer{msgstr} = $self->dequote($1, $eol);
-            $last_buffer = \$buffer{msgstr};
-        }
-        elsif (/^(?:#~\s+)?msgstr\[(\d+)\]\s+(.*)/) {
-
-            # translated string
-            $buffer{msgstr_n}{$1} = $self->dequote($2, $eol);
-            $last_buffer = \$buffer{msgstr_n}{$1};
-        }
-        elsif (/^(?:#~\s+)?"/) {
-
-            # contined string
-            $$last_buffer .= $self->dequote($_, $eol);
-        }
-        else {
-            warn "Strange line at $file_name line $line_number: $_\n";
-        }
-    }
-    if ( defined($po) ) {
-
-        $po->msgctxt( $buffer{msgctxt} ) if defined $buffer{msgctxt};
-        $po->msgid( $buffer{msgid} ) if defined $buffer{msgid};
-        $po->msgid_plural( $buffer{msgid_plural} ) if defined $buffer{msgid_plural};
-        $po->msgstr( $buffer{msgstr} ) if defined $buffer{msgstr};
-        $po->msgstr_n( $buffer{msgstr_n} ) if defined $buffer{msgstr_n};
-
+    my (@entries, %entries);
+    while (
+        my $po = $self->load_entry(
+            $file_name,
+            $file_handle,
+            \$line_number,
+            $eol,
+        )
+    ) {
         # ashash
         if ($ashash) {
             if ( $po->_hash_key_ok(\%entries) ) {
-                $entries{ $po->msgid } = $po;
+                $entries{ $po->msgid() } = $po;
             }
         }
         # asarray
         else {
-            push( @entries, $po );
+            push @entries, $po;
         }
     }
-    return ( $ashash ? \%entries : \@entries );
+
+    return $ashash
+           ? \%entries
+           : \@entries;
+}
+
+sub load_entry {
+    my $self            = shift;
+    my $file_name       = shift;
+    my $file_handle     = shift;
+    my $line_number_ref = shift;
+    my $eol             = shift || "\n";
+
+    my $class = ref $self || $self;
+    my %last_line_of_section; # to find the end of an entry
+    my $current_section_key;  # to add lines
+
+    my ($current_line_number, $current_pos);
+    my $safe_current_position = sub {
+        # safe information to can roll back
+        $current_line_number = ${$line_number_ref};
+        $current_pos         = tell $file_handle;
+        defined $current_pos
+            or croak "Can not tell file pointer of file $file_name: $!";
+    };
+    $safe_current_position->();
+
+    my $is_new_entry = sub {
+        $current_section_key = shift;
+        if (
+            exists $last_line_of_section{ $current_section_key }
+            && $last_line_of_section{ $current_section_key }
+               != ${$line_number_ref} - 1
+        ) {
+            # roll back
+            ${$line_number_ref} = $current_line_number;
+            seek $file_handle, $current_pos, 0
+                or croak "Can not seek file pointer of file $file_name: $!";
+            return 1; # this is a new entry
+        }
+        $last_line_of_section{ $current_section_key } = ${$line_number_ref};
+        return;
+    };
+
+    my $po;             # build an object during read an entry
+    my %buffer;         # find the different msg...
+    my $current_buffer; # to add lines
+    LINE:
+    while (my $line = <$file_handle>) {
+        defined $line
+            or last LINE;
+        $line =~ s{\Q$eol\E \z}{}xms;
+        my $line_number = ++${$line_number_ref};
+        if ( $line =~ m{\A \s* \z}xms ) {
+            # Empty line. End of an entry.
+            last LINE if $po;
+        }
+        elsif (
+            $line =~ m{\A \# \s+ (.*)}xms
+            || $line =~ m{\A \# ()\z}xms
+        ) {
+            # Translator comments
+            last LINE if $is_new_entry->('comment');
+            $po ||= $class->new(eol => $eol, -loaded_line_number => $line_number);
+            $po->comment(
+                defined $po->comment()
+                ? $po->comment() . "$eol$1"
+                : $1
+            );
+        }
+        elsif ( $line =~ m{\A \# \. \s* (.*)}xms) {
+            # Automatic comments
+            last LINE if $is_new_entry->('comment');
+            $po ||= $class->new(eol => $eol, -loaded_line_number => $line_number);
+            $po->automatic(
+                defined $po->automatic()
+                ? $po->automatic() . "$eol$1"
+                : $1
+            );
+        }
+        elsif ( $line =~ m{\A \# : \s+ (.*)}xms ) {
+            # reference
+            last LINE if $is_new_entry->('comment');
+            $po ||= $class->new(eol => $eol, -loaded_line_number => $line_number);
+            $po->reference(
+                defined $po->reference()
+                ? $po->reference() . "$eol$1"
+                : $1
+            );
+        }
+        elsif ( $line =~ m{\A \# , \s+ (.*)}xms) {
+            # flags
+            last LINE if $is_new_entry->('comment');
+            $po ||= $class->new(eol => $eol, -loaded_line_number => $line_number);
+            my @flags = split m{\s* , \s*}xms, $1;
+            for my $flag (@flags) {
+                $po->add_flag($flag);
+            }
+        }
+        elsif ( $line =~ m{\A ( \# ~ \s+ )? ( msgctxt | msgid | msgplural | msgstr ) \s+ (.*)}xms ) {
+            last LINE if $is_new_entry->($2);
+            $po ||= $class->new(eol => $eol, -loaded_line_number => $line_number);
+            $buffer{$2} = $self->dequote($3, $eol);
+            $current_buffer = \$buffer{$2};
+            $po->obsolete(1) if $1;
+        }
+        elsif ($line =~  m{\A (?: \# ~ \s+ )? msgstr \[ (\d+) \] \s+ (.*)}xms ) {
+            # translated string
+            last LINE if $is_new_entry->('msgstr_n');
+            $buffer{msgstr_n}{$1} = $self->dequote($2, $eol);
+            $current_buffer = \$buffer{msgstr_n}{$1};
+        }
+        elsif ( $line =~ m{\A (?: \# ~ \s+ )? "}xms ) {
+            # contined string
+            ${$current_buffer} .= $self->dequote($line, $eol);
+            $last_line_of_section{ $current_section_key } = $line_number;
+        }
+        else {
+            warn "Strange line at $file_name line $line_number: $line\n";
+        }
+        $safe_current_position->();
+    }
+    if ($po) {
+        for my $key (qw(msgctxt msgid msgid_plural msgstr msgstr_n)) {
+            $po->$key( $buffer{$key} ) if defined $buffer{$key};
+        }
+        return $po;
+    }
+
+    return;
 }
 
 sub _hash_key_ok {
     my ($self, $entries) = @_;
 
-    my $key = $self->msgid;
+    my $key = $self->msgid();
 
     if ($entries->{$key}) {
-
         # don't overwrite non-obsolete entries with obsolete ones
-        return if ( ($self->obsolete) && (not $entries->{$key}->obsolete) );
-
+        return if $self->obsolete() && ! $entries->{$key}->obsolete();
         # don't overwrite translated entries with untranslated ones
-        return if ( ($self->msgstr !~ /\w/) && ($entries->{$key}->msgstr =~ /\w/) );
+        return if $self->msgstr() !~ /\w/ && $entries->{$key}->msgstr() =~ /\w/;
     }
 
     return 1;
 }
-
-# Autoload methods go after =cut, and are processed by the autosplit program.
 
 1;
 
@@ -579,7 +572,7 @@ The module L<Locale::PO>, version 0.21 was copied and modified
 for module DBD::PO::Text::PO.
 The module DBD::PO based on module DBD::PO::Text::PO.
 
-Read the original POD after this sentence.
+Read nearly the original POD after this sentence.
 
 =head1 original NAME
 
@@ -589,7 +582,7 @@ Locale::PO - Perl module for manipulating .po entries from GNU gettext
 
     use Locale::PO;
 
-    $po = Locale::PO->new([eol => $eol, [-option=>value ,...]])
+    $po = Locale::PO->new([eol => $eol, [-option => value, ...]])
     [$string =] $po->msgid([new string]);
     [$string =] $po->msgstr([new string]);
     [$string =] $po->comment([new string]);
@@ -643,13 +636,13 @@ msgid, like this:
     $po = Locale::PO->new(
         -msgid  => q{},
         -msgstr =>
-            "Project-Id-Version: PACKAGE VERSION\\n"
-            . "PO-Revision-Date: YEAR-MO-DA HO:MI +ZONE\\n"
-            . "Last-Translator: FULL NAME <EMAIL@ADDRESS>\\n"
-            . "Language-Team: LANGUAGE <LL@li.org>\\n"
-            . "MIME-Version: 1.0\\n"
-            . "Content-Type: text/plain; charset=CHARSET\\n"
-            . "Content-Transfer-Encoding: ENCODING\\n",
+            "Project-Id-Version: PACKAGE VERSION\n"
+            . "PO-Revision-Date: YEAR-MO-DA HO:MI +ZONE\n"
+            . "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+            . "Language-Team: LANGUAGE <LL@li.org>\n"
+            . "MIME-Version: 1.0\n"
+            . "Content-Type: text/plain; charset=CHARSET\n"
+            . "Content-Transfer-Encoding: ENCODING\n",
     );
 
 =item eol
@@ -810,24 +803,48 @@ Given a filename and a reference to a hash of Locale::PO objects,
 saves those objects to the file, creating a po-file. The entries
 are sorted alphabetically by untranslated string.
 
+=item load_entry
+
+Method was added to read entry by entry.
+
+    use Socket qw($CRLF);
+    open my $file_handle, '<', $file_name or die $!;
+    $eol = $CRLF;
+    my $line_number = 0;
+    while (
+        my $po = Locale::PO->load_entry(
+            'file name or something like for a possible error message',
+            $file_handle,
+            \$line_number,
+            $eol, # optional, default "\n"
+        )
+    ) {
+        do_something_with($po);
+    }
+
 =back
 
 =head1 AUTHOR
 
-Maintainer: Ken Prows, perl@xev.net
+Some Bugfixes in DBD::PO::Locale::PO: Steffen Winkler, steffenw at cpan.org
 
-Original version by: Alan Schwartz, alansz@pennmush.org
+Maintainer of Locale::PO: Ken Prows, perl at xev.net
+
+Original version of Locale::PO by: Alan Schwartz, alansz at pennmush.org
 
 =head1 BUGS
 
 If you load_file_as* then save_file_from*, the output file may have slight
 cosmetic differences from the input file (an extra blank line here or there).
+(And the quoting of binary values can be changed, but all this is not a Bug.)
 
-msgid, msgid_plural, msgstr, msgstr_n and msgctxt expect a non-quoted string as input, but return quoted strings.
-I'm hesitant to change this in fear of breaking the modules/scripts of people already using Locale::PO.
+msgid, msgid_plural, msgstr, msgstr_n and msgctxt
+expect a non-quoted string as input, but return quoted strings.
+I'm hesitant to change this in fear of breaking the modules/scripts
+of people already using Locale::PO. (Fixed)
 
 Locale::PO requires blank lines between entries, but Uniforum style PO
-files don't have any.
+files don't have any. (Fixed)
 
 Please submit all bug requests using CPAN's ticketing system.
 

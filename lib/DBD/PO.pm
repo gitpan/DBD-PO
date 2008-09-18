@@ -11,7 +11,7 @@ use DBD::PO::Statement;
 use DBD::PO::Table;
 use DBD::PO::st;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 our $drh = ();       # holds driver handle once initialised
 our $err = 0;        # holds error code   for DBI::err
@@ -26,13 +26,13 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 183 2008-09-05 19:56:55Z steffenw $
+$Id: PO.pm 216 2008-09-18 07:56:05Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
 =head1 VERSION
 
-0.07
+0.08
 
 =head1 SYNOPSIS
 
@@ -147,7 +147,7 @@ the translation
 
 =head3 build msgstr
 
-Minimized example:
+=head4 minimized example
 
 The charset will set to the in parameter 'charset' given value
 at the connect method or to the default 'utf-8'.
@@ -158,7 +158,7 @@ at the connect method or to the default 'utf-8'.
         'build_header_msgstr',
     );
 
-Full example:
+=head4 full example (but use the named one)
 
     my $header_msgstr = $dbh->func(
         [
@@ -179,8 +179,8 @@ Full example:
             ],
             # undef to accept the defaut settings
             undef, # mime version (1.0)
-            undef, # content type (text/plain)
-                   # and charset 'utf-8' or given at the connect method)
+            undef, # arrayref of content type (text/plain) and charset
+                   # 'iso-8859-1' or given as po_charset at the connect method
             undef, # content transfer encoding (8bit)
             # place here pairs for extra parameters
             [qw(
@@ -189,6 +189,34 @@ Full example:
                 X-Poedit-SourceCharset utf-8
             )],
         ],
+        # function name
+        'build_header_msgstr',
+    );
+
+=head4 full example using named parameters
+
+    my $header_msgstr = $dbh->func(
+        {
+            'Project-Id-Version'        => 'Project name',
+            'POT-Creation-Date'         => 'the POT creation date',
+            'PO-Revision-Date'          => 'the PO revision date',
+            'Last-Translator-Name'      => 'Steffen Winkler',
+            'Last-Translator-Mail'      => 'steffenw@example.org',
+            'Language-Team-Name'        => 'MyTeam',
+            'Language-Team-Mail'        => 'cpan@example.org',
+            # Do not set the following values.
+            # They will be set automaticly.
+            'MIME-Version'              => '1.0',
+            'Content-Type'              => 'text/plain',
+            charset                     => $po_charset || 'iso-8859-1',
+            'Content-Transfer-Encoding' => '8bit',
+            # place here pairs for extra parameters
+            extended                    => [qw(
+                X-Poedit-Language      German
+                X-Poedit-Country       GERMANY
+                X-Poedit-SourceCharset utf-8
+            )],
+        },
         # function name
         'build_header_msgstr',
     );

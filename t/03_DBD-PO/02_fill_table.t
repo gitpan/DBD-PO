@@ -3,7 +3,10 @@
 use strict;
 use warnings;
 
-use Test::DBD::PO::Defaults;
+use Test::DBD::PO::Defaults qw(
+    $PATH $TRACE $SEPARATOR $EOL
+    trace_file_name $TABLE_0X $FILE_0X
+);
 use Test::More tests => 10;
 eval 'use Test::Differences qw(eq_or_diff)';
 if ($@) {
@@ -20,7 +23,7 @@ my ($dbh, $sth);
 # connext
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_charset=utf-8",
+        "dbi:PO:f_dir=$PATH;po_charset=utf-8",
         undef,
         undef,
         {
@@ -31,8 +34,8 @@ my ($dbh, $sth);
     );
     isa_ok($dbh, 'DBI::db', 'connect');
 
-    if ($Test::DBD::PO::Defaults::TRACE) {
-        open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
+    if ($TRACE) {
+        open my $file, '>', trace_file_name();
         $dbh->trace(4, $file);
     }
 }
@@ -40,7 +43,7 @@ my ($dbh, $sth);
 # full row
 {
     $sth = $dbh->prepare(<<"EO_SQL");
-        INSERT INTO $Test::DBD::PO::Defaults::TABLE_0X (
+        INSERT INTO $TABLE_0X (
             msgid,
             msgstr,
             reference,
@@ -63,11 +66,11 @@ EO_SQL
 # full row, all are arrays
 {
     my $result = $sth->execute(
-        "id_value1${Test::DBD::PO::Defaults::SEPARATOR}id_value2",
-        "str_value1${Test::DBD::PO::Defaults::SEPARATOR}str_value2",
-        "ref_value1${Test::DBD::PO::Defaults::SEPARATOR}ref_value2",
-        "comment_value1${Test::DBD::PO::Defaults::SEPARATOR}comment_value2",
-        "automatic_value1${Test::DBD::PO::Defaults::SEPARATOR}automatic_value2",
+        "id_value1${SEPARATOR}id_value2",
+        "str_value1${SEPARATOR}str_value2",
+        "ref_value1${SEPARATOR}ref_value2",
+        "comment_value1${SEPARATOR}comment_value2",
+        "automatic_value1${SEPARATOR}automatic_value2",
     );
     is($result, 1, "insert full row, all are arrays");
 }
@@ -75,7 +78,7 @@ EO_SQL
 # minimized row
 {
     my $result = $dbh->do(<<"EO_SQL", undef, 'id_value_mini');
-        INSERT INTO $Test::DBD::PO::Defaults::TABLE_0X (msgid) VALUES (?)
+        INSERT INTO $TABLE_0X (msgid) VALUES (?)
 EO_SQL
     is($result, 1, "insert minimized row");
 }
@@ -83,7 +86,7 @@ EO_SQL
 # typical rows
 {
     $sth = $dbh->prepare(<<"EO_SQL");
-        INSERT INTO $Test::DBD::PO::Defaults::TABLE_0X (msgid, msgstr) VALUES (?, ?)
+        INSERT INTO $TABLE_0X (msgid, msgstr) VALUES (?, ?)
 EO_SQL
     isa_ok($sth, 'DBI::st', 'prepare insert');
 
@@ -141,9 +144,9 @@ msgid "id_2"
 msgstr "str_2"
 
 EOT
-    open my $file, '< :raw', $Test::DBD::PO::Defaults::FILE_0X or die $!;
+    open my $file, '< :raw', $FILE_0X or die $!;
     local $/ = ();
     my $content = <$file>;
-    $po =~ s{\n}{$Test::DBD::PO::Defaults::EOL}xmsg;
+    $po =~ s{\n}{$EOL}xmsg;
     eq_or_diff($content, $po, 'check po file');
 }

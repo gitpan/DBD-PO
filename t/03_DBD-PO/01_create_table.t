@@ -3,7 +3,12 @@
 use strict;
 use warnings;
 
-use Test::DBD::PO::Defaults;
+use Test::DBD::PO::Defaults qw(
+    $PATH $EOL $SEPARATOR $TRACE
+    trace_file_name
+    $TABLE_0X
+    $FILE_0X
+);
 use Test::More tests => 6;
 eval 'use Test::Differences qw(eq_or_diff)';
 if ($@) {
@@ -16,11 +21,7 @@ BEGIN {
 }
 
 my $dbh = DBI->connect(
-    'dbi:PO:'
-    . "f_dir=$Test::DBD::PO::Defaults::PATH;"
-    . "po_eol=$Test::DBD::PO::Defaults::EOL;"
-    . "po_separator=$Test::DBD::PO::Defaults::SEPARATOR;"
-    . 'po_charset=utf-8',
+    "dbi:PO:f_dir=$PATH;po_eol=$EOL;po_separator=$SEPARATOR;po_charset=utf-8",
     undef,
     undef,
     {
@@ -31,13 +32,13 @@ my $dbh = DBI->connect(
 );
 isa_ok($dbh, 'DBI::db', 'connect');
 
-if ($Test::DBD::PO::Defaults::TRACE) {
-    open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
+if ($TRACE) {
+    open my $file, '>', trace_file_name();
     $dbh->trace(4, $file);
 }
 
 my $result = $dbh->do(<<"EO_SQL");
-    CREATE TABLE $Test::DBD::PO::Defaults::TABLE_0X (
+    CREATE TABLE $TABLE_0X (
         comment    VARCHAR,
         automatic  VARCHAR,
         reference  VARCHAR,
@@ -50,11 +51,11 @@ my $result = $dbh->do(<<"EO_SQL");
     )
 EO_SQL
 is($result, '0E0', 'create table');
-ok(-e $Test::DBD::PO::Defaults::TABLE_0X, 'table file found');
+ok(-e $TABLE_0X, 'table file found');
 
 my @parameters = (
     join(
-        $Test::DBD::PO::Defaults::SEPARATOR,
+        $SEPARATOR,
         qw(
             comment1
             comment2
@@ -86,7 +87,7 @@ my @parameters = (
     ),
 );
 $result = $dbh->do(<<"EO_SQL", undef, @parameters);
-    INSERT INTO $Test::DBD::PO::Defaults::TABLE_0X (
+    INSERT INTO $TABLE_0X (
         comment,
         msgstr
     ) VALUES (?, ?)
@@ -113,9 +114,9 @@ msgstr ""
 "X-Poedit-SourceCharset: utf-8"
 
 EOT
-    open my $file, '< :raw', $Test::DBD::PO::Defaults::FILE_0X or die $!;
+    open my $file, '< :raw', $FILE_0X or die $!;
     local $/ = ();
     my $content = <$file>;
-    $po =~ s{\n}{$Test::DBD::PO::Defaults::EOL}xmsg;
+    $po =~ s{\n}{$EOL}xmsg;
     eq_or_diff($content, $po, 'check po file');
 }

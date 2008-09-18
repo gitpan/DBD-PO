@@ -35,7 +35,7 @@ our $data_sources_attr = ();
 sub connect ($$;$$$) {
     my ($drh, $dbname, $user, $auth, $attr) = @_;
 
-    my $dbh = $drh->DBD::File::dr::connect($dbname, $user, $auth, $attr);
+    my $dbh = $drh->SUPER::connect($dbname, $user, $auth, $attr);
     $dbh->{po_tables} ||= {};
     $dbh->{Active} = 1;
 

@@ -3,7 +3,11 @@
 use strict;
 use warnings;
 
-use Test::DBD::PO::Defaults;
+use Test::DBD::PO::Defaults qw(
+    $TRACE $PATH $DROP_TABLE
+    trace_file_name
+    $TABLE_13 $FILE_13
+);
 use Test::More tests => 27;
 eval 'use Test::Differences qw(eq_or_diff)';
 if ($@) {
@@ -20,8 +24,8 @@ BEGIN {
 }
 
 my $trace_file;
-if ($Test::DBD::PO::Defaults::TRACE) {
-    open $trace_file, '>', Test::DBD::PO::Defaults::trace_file_name();
+if ($TRACE) {
+    open $trace_file, '>', trace_file_name();
 }
 
 # build table
@@ -30,7 +34,7 @@ sub build_table {
 
     my $charset = $param->{charset};
     my $dbh = $param->{dbh} = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_eol=\n;po_charset=$charset",
+        "dbi:PO:f_dir=$PATH;po_eol=\n;po_charset=$charset",
         undef,
         undef,
         {
@@ -46,8 +50,8 @@ sub build_table {
     }
 
     @{$param}{qw(table table_file)} = (
-        $Test::DBD::PO::Defaults::TABLE_13,
-        $Test::DBD::PO::Defaults::FILE_13,
+        $TABLE_13,
+        $FILE_13,
     );
     for my $name (@{$param}{qw(table table_file)}) {
         $name =~ s{\?}{$charset}xms;
@@ -143,7 +147,7 @@ sub drop_table {
 
     SKIP: {
         skip('drop table', 2)
-            if ! $Test::DBD::PO::Defaults::DROP_TABLE;
+            if ! $DROP_TABLE;
 
         my $result = $param->{dbh}->do(<<"EO_SQL");
             DROP TABLE $param->{table}

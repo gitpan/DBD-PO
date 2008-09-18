@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::DBD::PO::Defaults;
+use Test::DBD::PO::Defaults qw($FILE_TEXT_PO $DROP_TABLE);
 use Test::More tests => 7;
 eval 'use Test::Differences qw(eq_or_diff)';
 if ($@) {
@@ -72,7 +72,7 @@ my $po_string = quote($test_string, "\n");
 
     ok(
         $file->open(
-            $Test::DBD::PO::Defaults::FILE_TEXT_PO,
+            $FILE_TEXT_PO,
             '> :encoding(utf-8)',
         ),
         'open file',
@@ -116,7 +116,7 @@ EOT
     local $/ = ();
     open my $file1,
          '< :encoding(utf-8)',
-         $Test::DBD::PO::Defaults::FILE_TEXT_PO or die $!;
+         $FILE_TEXT_PO or die $!;
     my $content1 = <$file1>;
     open my $file2, '< :encoding(utf-8)', \($po) or die $!;
     my $content2 = <$file2>;
@@ -126,8 +126,8 @@ EOT
 # drop table
 SKIP: {
     skip('delete file', 1)
-        if ! $Test::DBD::PO::Defaults::DROP_TABLE;
+        if ! $DROP_TABLE;
 
-    unlink $Test::DBD::PO::Defaults::FILE_TEXT_PO;
-    ok(! -e $Test::DBD::PO::Defaults::FILE_TEXT_PO, 'table file deleted');
+    unlink $FILE_TEXT_PO;
+    ok(! -e $FILE_TEXT_PO, 'table file deleted');
 }

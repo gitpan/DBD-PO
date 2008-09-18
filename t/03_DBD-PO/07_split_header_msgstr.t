@@ -3,7 +3,11 @@
 use strict;
 use warnings;
 
-use Test::DBD::PO::Defaults;
+use Test::DBD::PO::Defaults qw(
+    $PATH $TRACE
+    trace_file_name
+    $TABLE_0X
+);
 use Test::More tests => 5;
 
 BEGIN {
@@ -15,7 +19,7 @@ my $dbh;
 # connext
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_charset=utf-8",
+        "dbi:PO:f_dir=$PATH;po_charset=utf-8",
         undef,
         undef,
         {
@@ -26,15 +30,15 @@ my $dbh;
     );
     isa_ok($dbh, 'DBI::db', 'connect');
 
-    if ($Test::DBD::PO::Defaults::TRACE) {
-        open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
+    if ($TRACE) {
+        open my $file, '>', trace_file_name();
         $dbh->trace(4, $file);
     }
 }
 
 my $sth = $dbh->prepare(<<"EO_SQL");
         SELECT msgstr
-        FROM   $Test::DBD::PO::Defaults::TABLE_0X
+        FROM   $TABLE_0X
         WHERE  msgid=''
 EO_SQL
 isa_ok($sth, 'DBI::st', 'prepare');

@@ -3,7 +3,11 @@
 use strict;
 use warnings;
 
-use Test::DBD::PO::Defaults;
+use Test::DBD::PO::Defaults qw(
+    $PATH $TRACE $SEPARATOR $EOL
+    trace_file_name
+    $TABLE_0X $FILE_0X
+);
 use Test::More tests => 42;
 eval 'use Test::Differences qw(eq_or_diff)';
 if ($@) {
@@ -20,7 +24,7 @@ my $dbh;
 # connext
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_charset=utf-8",
+        "dbi:PO:f_dir=$PATH;po_charset=utf-8",
         undef,
         undef,
         {
@@ -31,8 +35,8 @@ my $dbh;
     );
     isa_ok($dbh, 'DBI::db', 'connect');
 
-    if ($Test::DBD::PO::Defaults::TRACE) {
-        open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
+    if ($TRACE) {
+        open my $file, '>', trace_file_name();
         $dbh->trace(4, $file);
     }
 }
@@ -40,7 +44,7 @@ my $dbh;
 # change header flags
 {
     my $sth_update = $dbh->prepare(<<"EO_SQL");
-        UPDATE $Test::DBD::PO::Defaults::TABLE_0X
+        UPDATE $TABLE_0X
         SET    fuzzy=?
         WHERE  msgid=?
 EO_SQL
@@ -48,7 +52,7 @@ EO_SQL
 
     my $sth_select = $dbh->prepare(<<"EO_SQL");
         SELECT fuzzy
-        FROM   $Test::DBD::PO::Defaults::TABLE_0X
+        FROM   $TABLE_0X
         WHERE  msgid=?
 EO_SQL
     isa_ok($sth_select, 'DBI::st', 'prepare select header');
@@ -83,7 +87,7 @@ EO_SQL
 # change flags
 {
     my $sth_update = $dbh->prepare(<<"EO_SQL");
-        UPDATE $Test::DBD::PO::Defaults::TABLE_0X
+        UPDATE $TABLE_0X
         SET    fuzzy=?, c_format=?, php_format=?
         WHERE  msgid=?
 EO_SQL
@@ -91,7 +95,7 @@ EO_SQL
 
     my $sth_select = $dbh->prepare(<<"EO_SQL");
         SELECT fuzzy, c_format, php_format
-        FROM   $Test::DBD::PO::Defaults::TABLE_0X
+        FROM   $TABLE_0X
         WHERE  msgid=?
 EO_SQL
     isa_ok($sth_select, 'DBI::st');
@@ -186,11 +190,11 @@ EO_SQL
     for my $data (@data) {
         my $result = $sth_update->execute(
             @{ $data->{set} },
-            "id_value1${Test::DBD::PO::Defaults::SEPARATOR}id_value2",
+            "id_value1${SEPARATOR}id_value2",
         );
         is($result, 1, "update: $data->{test}");
 
-        $result = $sth_select->execute("id_value1${Test::DBD::PO::Defaults::SEPARATOR}id_value2");
+        $result = $sth_select->execute("id_value1${SEPARATOR}id_value2");
         is($result, 1, "select: $data->{test}");
         $result = $sth_select->fetchall_arrayref({});
         is_deeply($result, $data->{get}, "fetch result: $data->{test}");
@@ -275,10 +279,10 @@ msgid "id_2"
 msgstr "str_2"
 
 EOT
-    open my $file, '< :raw', $Test::DBD::PO::Defaults::FILE_0X or die $!;
+    open my $file, '< :raw', $FILE_0X or die $!;
     local $/ = ();
     my $content = <$file>;
-    $po =~ s{\n}{$Test::DBD::PO::Defaults::EOL}xmsg;
+    $po =~ s{\n}{$EOL}xmsg;
     eq_or_diff($content, $po, "check po file: $test");
 
     return;

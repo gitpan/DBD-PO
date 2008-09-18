@@ -3,7 +3,11 @@
 use strict;
 use warnings;
 
-use Test::DBD::PO::Defaults;
+use Test::DBD::PO::Defaults qw(
+    $PATH $TRACE $DROP_TABLE
+    trace_file_name
+    $TABLE_15 $FILE_15
+);
 use Test::More tests => 33;
 eval 'use Test::Differences qw(eq_or_diff)';
 if ($@) {
@@ -51,7 +55,7 @@ my ($dbh, $sth_update, $sth_select);
 # connect
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_eol=\n;po_charset=utf-8",
+        "dbi:PO:f_dir=$PATH;po_eol=\n;po_charset=utf-8",
         undef,
         undef,
         {
@@ -62,19 +66,19 @@ my ($dbh, $sth_update, $sth_select);
     );
     isa_ok($dbh, 'DBI::db', 'connect');
 
-    if ($Test::DBD::PO::Defaults::TRACE) {
-        open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
+    if ($TRACE) {
+        open my $file, '>', trace_file_name();
         $dbh->trace(4, $file);
     }
 
     my $result = $dbh->do(<<"EO_SQL");
-        CREATE TABLE $Test::DBD::PO::Defaults::TABLE_15 (
+        CREATE TABLE $TABLE_15 (
             msgid VARCHAR,
             msgstr VARCHAR
         )
 EO_SQL
     is($result, '0E0', 'create table');
-    ok(-e $Test::DBD::PO::Defaults::FILE_15, 'table file found');
+    ok(-e $FILE_15, 'table file found');
 }
 
 # add header
@@ -84,7 +88,7 @@ EO_SQL
         'build_header_msgstr',
     );
     my $result = $dbh->do(<<"EO_SQL", undef, $msgstr);
-        INSERT INTO $Test::DBD::PO::Defaults::TABLE_15 (
+        INSERT INTO $TABLE_15 (
             msgstr
         ) VALUES (?)
 EO_SQL
@@ -94,7 +98,7 @@ EO_SQL
 # prepare
 {
     $sth_update = $dbh->prepare(<<"EOT");
-        UPDATE $Test::DBD::PO::Defaults::TABLE_15
+        UPDATE $TABLE_15
         SET    msgstr=?
         WHERE  msgid=''
 EOT
@@ -102,7 +106,7 @@ EOT
 
     $sth_select = $dbh->prepare(<<"EOT");
         SELECT msgstr
-        FROM $Test::DBD::PO::Defaults::TABLE_15
+        FROM $TABLE_15
         WHERE  msgid=''
 EOT
     isa_ok($sth_update, 'DBI::st', 'prepare select');
@@ -157,7 +161,7 @@ EOT
 
 EOT
     local $/ = ();
-    open my $file1, '< :encoding(utf-8)', $Test::DBD::PO::Defaults::FILE_15 or die $!;
+    open my $file1, '< :encoding(utf-8)', $FILE_15 or die $!;
     my $content1 = <$file1>;
     open my $file2, '< :encoding(utf-8)', \($po) or die $!;
     my $content2 = <$file2>;
@@ -211,7 +215,7 @@ sub read_header_directly {
 
     is_deeply(
         $dbh->func(
-            {table => $Test::DBD::PO::Defaults::TABLE_15},
+            {table => $TABLE_15},
             $test_key,
             'get_header_msgstr_data',
         ),
@@ -233,11 +237,11 @@ for my $name (keys %test_data) {
 # drop table
 SKIP: {
     skip('drop table', 2)
-        if ! $Test::DBD::PO::Defaults::DROP_TABLE;
+        if ! $DROP_TABLE;
 
     my $result = $dbh->do(<<"EO_SQL");
-        DROP TABLE $Test::DBD::PO::Defaults::TABLE_15
+        DROP TABLE $TABLE_15
 EO_SQL
     is($result, '-1', 'drop table');
-    ok(! -e $Test::DBD::PO::Defaults::FILE_15, 'table file deleted');
+    ok(! -e $FILE_15, 'table file deleted');
 }

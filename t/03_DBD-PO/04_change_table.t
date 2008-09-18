@@ -3,7 +3,11 @@
 use strict;
 use warnings;
 
-use Test::DBD::PO::Defaults;
+use Test::DBD::PO::Defaults qw(
+    $PATH $TRACE $EOL
+    trace_file_name
+    $TABLE_0X $FILE_0X
+);
 use Test::More tests => 7;
 eval 'use Test::Differences qw(eq_or_diff)';
 if ($@) {
@@ -20,7 +24,7 @@ my $dbh;
 # connext
 {
     $dbh = DBI->connect(
-        "dbi:PO:f_dir=$Test::DBD::PO::Defaults::PATH;po_charset=utf-8",
+        "dbi:PO:f_dir=$PATH;po_charset=utf-8",
         undef,
         undef,
         {
@@ -31,8 +35,8 @@ my $dbh;
     );
     isa_ok($dbh, 'DBI::db', 'connect');
 
-    if ($Test::DBD::PO::Defaults::TRACE) {
-        open my $file, '>', Test::DBD::PO::Defaults::trace_file_name();
+    if ($TRACE) {
+        open my $file, '>', trace_file_name();
         $dbh->trace(4, $file);
     }
 }
@@ -40,7 +44,7 @@ my $dbh;
 # change table
 {
     my $result = $dbh->do(<<"EO_SQL", undef, qw(str_1u id_1));
-        UPDATE $Test::DBD::PO::Defaults::TABLE_0X
+        UPDATE $TABLE_0X
         SET    msgstr=?
         WHERE  msgid=?
 EO_SQL
@@ -48,7 +52,7 @@ EO_SQL
 
     my $sth = $dbh->prepare(<<"EO_SQL");
         SELECT msgid, msgstr
-        FROM   $Test::DBD::PO::Defaults::TABLE_0X
+        FROM   $TABLE_0X
         WHERE  msgid=?
 EO_SQL
     isa_ok($sth, 'DBI::st', 'prepare');
@@ -108,9 +112,9 @@ msgid "id_2"
 msgstr "str_2"
 
 EOT
-    open my $file, '< :raw', $Test::DBD::PO::Defaults::FILE_0X or die $!;
+    open my $file, '< :raw', $FILE_0X or die $!;
     local $/ = ();
     my $content = <$file>;
-    $po =~ s{\n}{$Test::DBD::PO::Defaults::EOL}xmsg;
+    $po =~ s{\n}{$EOL}xmsg;
     eq_or_diff($content, $po, 'check po file');
 }

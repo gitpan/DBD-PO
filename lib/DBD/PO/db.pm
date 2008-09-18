@@ -7,11 +7,12 @@ use DBD::File;
 use parent qw(-norequire DBD::File::db);
 
 use Carp qw(croak);
+use Params::Validate qw(:all);
+use Storable qw(dclone);
 use SQL::Statement; # for SQL::Parser
 use SQL::Parser;
 use DBD::PO::Locale::PO;
-use Params::Validate qw(:all);
-use Storable qw(dclone);
+use DBD::PO::Text::PO qw($EOL_DEFAULT $SEPARATOR_DEFAULT $CHARSET_DEFAULT);
 
 our $imp_data_size = 0;
 
@@ -52,9 +53,9 @@ our @HEADER_REGEX = (
 );
 
 sub quote ($$;$) {
-    my($self, $str, $type) = @_;
+    my($self, $string, $type) = @_;
 
-    defined $str
+    defined $string
         or return 'NULL';
     if (
         defined($type)
@@ -69,15 +70,19 @@ sub quote ($$;$) {
             || $type == DBI::SQL_TINYINT()
         )
     ) {
-        return $str;
+        return $string;
     }
-    $str =~ s/\\/\\\\/sg;
-    $str =~ s/\0/\\0/sg;
-    $str =~ s/\'/\\\'/sg;
-    $str =~ s/\n/\\n/sg;
-    $str =~ s/\r/\\r/sg;
+    my $is_quoted;
+    for (
+        $string =~ s{\\}{\\\\}xmsg,
+        $string =~ s{'}{\\'}xmsg,
+    ) {
+       $is_quoted ||= $_;
+    }
 
-    return "'$str'";
+    return $is_quoted
+           ? "'_Q_U_O_T_E_D_:$string'"
+           : "'$string'";
 }
 
 my %hash2array = (
@@ -105,6 +110,8 @@ my $valid_keys_regex = '(?xsm-i:\A (?: '
                        . ' ) \z)';
 
 sub _hash2array {
+    caller eq __PACKAGE__
+        or croak 'Do not call a private sub';
     my ($hash_data, $charset) = @_;
     validate_with(
         params => $hash_data,
@@ -147,7 +154,7 @@ sub build_header_msgstr {
 
     my $charset = $dbh->FETCH('po_charset')
                   ? $dbh->FETCH('po_charset')
-                  : $DBD::PO::Text::PO::CHARSET_DEFAULT;
+                  : $CHARSET_DEFAULT;
     my $array_data = ref $anything eq 'HASH'
                      ? _hash2array($anything, $charset)
                      : $anything;
@@ -223,11 +230,11 @@ EOT
     my $po = DBD::PO::Locale::PO->new(
         eol => defined $dbh->FETCH('eol')
                ? $dbh->FETCH('eol')
-               : $DBD::PO::Text::PO::EOL_DEFAULT,
+               : $EOL_DEFAULT,
     );
     my $separator = defined $dbh->FETCH('separator')
                     ? $dbh->FETCH('separator')
-                    : $DBD::PO::Text::PO::SEPARATOR_DEFAULT;
+                    : $SEPARATOR_DEFAULT;
     my @cols;
     my $index = 0;
     my @lines = split m{\Q$separator\E}xms, $msgstr;

@@ -7,21 +7,43 @@ use Carp qw(croak);
 use DBI ();
 use Data::Dumper ();
 
-my $dbh = DBI->connect(
-    'DBI:PO:po_charset=utf-8',
-    undef,
-    undef,
-    {
-        RaiseError => 1,
-        PrintError => 0,
-    },
-) or croak 'Cannot connect: ' . DBI->errstr();
+# for test examples only
+our $PATH;
+our $TABLE_2X;
+eval 'use Test::DBD::PO::Defaults qw($PATH TABLE_2X)';
+
+my $path  = $PATH
+            || './';
+my $table = $TABLE_2X
+            || 'table.po';
+
+my $dbh;
+# Read the charset from the po file
+# and than change the encoding to this charset.
+# This is the way to read unicode chars from unknown po files.
+my $po_charset = q{};
+for (1 .. 2) {
+    $dbh = DBI->connect(
+        "DBI:PO:f_dir=$path;po_charset=$po_charset",
+        undef,
+        undef,
+        {
+            RaiseError => 1,
+            PrintError => 0,
+        },
+    ) or croak 'Cannot connect: ' . DBI->errstr();
+    $po_charset = $dbh->func(
+        {table => $table},        # wich table
+        'charset',                # what to get
+        'get_header_msgstr_data', # function name
+    );
+}
 
 # header msgid is always empty but not NULL
 {
-    my $sth = $dbh->prepare(<<'EOT');
+    my $sth = $dbh->prepare(<<"EOT");
         SELECT msgstr
-        FROM   table.po
+        FROM   $table
         WHERE  msgid = ''
 EOT
 
@@ -44,18 +66,19 @@ EOT
 
 # row msgid is never empty
 {
-    my $sth = $dbh->prepare(<<'EOT');
+    my $sth = $dbh->prepare(<<"EOT");
         SELECT msgid, msgstr
-        FROM   table.po
+        FROM   $table
         WHERE  msgid <> ''
 EOT
 
     $sth->execute();
 
     while (my $row = $sth->fetchrow_hashref()) {
-        printf "original:\n%s\ntranslation:\n%s\n",
-               $row->{msgid},
-               $row->{msgstr};
+        print Data::Dumper->new([$row], [qw(row)])
+                          ->Quotekeys(0)
+                          ->Useqq(1)
+                          ->Dump();
     }
 }
 
