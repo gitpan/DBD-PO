@@ -1,7 +1,8 @@
 Build.PL
 Changes
-example/read.pl
-example/write.pl
+example/01_write.pl
+example/02_read_using_Locale-Maketext.pl
+example/03_read.pl
 lib/DBD/PO.pm
 lib/DBD/PO/db.pm
 lib/DBD/PO/dr.pm
@@ -30,8 +31,10 @@ t/03_DBD-PO/12_more_tables.t
 t/03_DBD-PO/13_charsets.t
 t/03_DBD-PO/14_quote.t
 t/03_DBD-PO/15_header_msgstr_hash.t
+t/03_DBD-PO/16_maketext_to_gettext.t
 t/03_DBD-PO/21_example_write.t
-t/03_DBD-PO/22_example_read.t
+t/03_DBD-PO/22_read_using_Locale-Maketext.t
+t/03_DBD-PO/23_example_read.t
 t/pod.t
 t/pod_coverage.t
 Makefile.PL

@@ -11,7 +11,7 @@ use DBD::PO::Statement;
 use DBD::PO::Table;
 use DBD::PO::st;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 our $drh = ();       # holds driver handle once initialised
 our $err = 0;        # holds error code   for DBI::err
@@ -26,13 +26,13 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 216 2008-09-18 07:56:05Z steffenw $
+$Id: PO.pm 225 2008-09-20 18:42:26Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
 =head1 VERSION
 
-0.08
+0.09
 
 =head1 SYNOPSIS
 
@@ -243,8 +243,7 @@ EOT
 
 =head2 write a row
 
-Note the use of the quote method for escaping the word 'foobar'. Any
-string must be escaped, even if it doesn't contain binary data.
+=head2 without Locale::Maketext placeholder
 
     my $sth = $dbh->prepare(<<'EOT');
         INSERT INTO table.po (
@@ -264,6 +263,38 @@ string must be escaped, even if it doesn't contain binary data.
             $separator,
             'translation',
             '2nd line of translation',
+        ),
+        join(
+            $separator,
+            'my_program: 17',
+            'my_program: 269',
+        ),
+    );
+
+=head2 with Locale::Maketext placeholder
+
+    my $sth = $dbh->prepare(<<'EOT');
+        INSERT INTO table.po (
+            msgid,
+            msgstr,
+            reference
+        ) VALUES (?, ?, ?)
+    EOT
+
+    $sth->execute(
+        $dbh->func(
+            # mapping: 2 values given - 2 returns
+            join(
+                $separator,
+                'text to translate',
+                '2nd line of text',
+            ),
+            join(
+                $separator,
+                'translation',
+                '2nd line of translation',
+            ),
+            'maketext_to_gettext',
         ),
         join(
             $separator,

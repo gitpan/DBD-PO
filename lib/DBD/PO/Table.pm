@@ -47,7 +47,6 @@ sub push_row ($$$) {
     return 1;
 }
 
-#*push_names = \&push_row;
 sub push_names ($$$) {
     my ($self, $data, $fields) = @_;
 

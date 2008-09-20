@@ -2,18 +2,18 @@
 use ExtUtils::MakeMaker;
 WriteMakefile
 (
+          'PL_FILES' => {},
+          'INSTALLDIRS' => 'site',
           'NAME' => 'DBD::PO',
+          'EXE_FILES' => [],
           'VERSION_FROM' => 'lib/DBD/PO.pm',
           'PREREQ_PM' => {
-                           'DBI' => 0,
-                           'Encode' => 0,
+                           'parent' => 0,
                            'Params::Validate' => 0,
-                           'SQL::Statement' => 0,
                            'Test::Simple' => 0,
-                           'parent' => 0
-                         },
-          'INSTALLDIRS' => 'site',
-          'EXE_FILES' => [],
-          'PL_FILES' => {}
+                           'SQL::Statement' => 0,
+                           'Encode' => 0,
+                           'DBI' => 0
+                         }
         )
 ;

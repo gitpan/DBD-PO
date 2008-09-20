@@ -460,8 +460,6 @@ sub load_entry {
     my $current_buffer; # to add lines
     LINE:
     while (my $line = <$file_handle>) {
-        defined $line
-            or last LINE;
         $line =~ s{\Q$eol\E \z}{}xms;
         my $line_number = ++${$line_number_ref};
         if ( $line =~ m{\A \s* \z}xms ) {
@@ -561,8 +559,6 @@ sub _hash_key_ok {
 1;
 
 __END__
-
-# Below is the stub of documentation for your module. You better edit it!
 
 =head1 NAME
 

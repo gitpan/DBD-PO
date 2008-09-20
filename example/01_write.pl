@@ -9,10 +9,10 @@ use DBI ();
 # for test examples only
 our $PATH;
 our $TABLE_2X;
-eval 'use Test::DBD::PO::Defaults qw($PATH TABLE_2X)';
+eval 'use Test::DBD::PO::Defaults qw($PATH $TABLE_2X)';
 
 my $path  = $PATH
-            || './';
+            || '.';
 my $table = $TABLE_2X
             || 'table.po';
 
@@ -65,19 +65,29 @@ EOT
 
 my @data = (
     {
-        original    => 'text to translate',
-        translation => 'translation',
+        original    => 'text original',
+        translation => 'text translated',
     },
     {
-        original    => "text2 to translate\n2nd line of text2",
-        translation => "translation2\n2nd line of translation2",
+        original    => "text original\n2nd line of text2",
+        translation => "text translated\n2nd line of text2",
+    },
+    {
+        original    => 'text original %1',
+        translation => 'text translated %1',
+    },
+    {
+        original    => 'original [quant,_1,o_one,o_more,o_nothing]',
+        translation => 'translated [quant,_1,t_one,t_more,t_nothing]',
     },
 );
 
 for my $data (@data) {
     $sth->execute(
-        $data->{original},    # msgid
-        $data->{translation}, # msgstr
+        $dbh->func(
+            @{$data}{qw(original translation)}, # msgid + msgstr
+            'maketext_to_gettext',
+        ),
     );
 };
 

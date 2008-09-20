@@ -32,8 +32,8 @@ my @cols = (
     [ qw( php_format -php-format php_format ) ],
 );
 our @COL_NAMES       = map {$_->[0]} @cols;
-our @COL_PARAMETERS  = map {$_->[1]} @cols;
-our @COL_METHODS     = map {$_->[2]} @cols;
+my  @COL_PARAMETERS  = map {$_->[1]} @cols;
+my  @COL_METHODS     = map {$_->[2]} @cols;
 
 sub _dequote {
     caller eq __PACKAGE__

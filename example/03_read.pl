@@ -10,10 +10,10 @@ use Data::Dumper ();
 # for test examples only
 our $PATH;
 our $TABLE_2X;
-eval 'use Test::DBD::PO::Defaults qw($PATH TABLE_2X)';
+eval 'use Test::DBD::PO::Defaults qw($PATH $TABLE_2X)';
 
 my $path  = $PATH
-            || './';
+            || '.';
 my $table = $TABLE_2X
             || 'table.po';
 

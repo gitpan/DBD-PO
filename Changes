@@ -1,5 +1,10 @@
 Revision history for Perl extension DBD::PO.
 
+0.09  Sat Sep 20 22:00:00 2008
+- ninth developer test version
+- change header parser to non case sensitive
+- change examples and create new example: read using Locale-Maketext
+
 0.08  Thu Sep 18 22:00:00 2008
 - eighth developer test version
 - "... = $dbh->quote(...);" ok now

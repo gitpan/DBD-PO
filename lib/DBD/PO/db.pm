@@ -27,9 +27,9 @@ my @header = (
     [ content_transfer_encoding => 'Content-Transfer-Encoding: %s' ],
     [ extended                  => '%s: %s'                        ],
 );
-our @HEADER_KEYS     = map {$_->[0]} @header;
-our @HEADER_FORMATS  = map {$_->[1]} @header;
-our @HEADER_DEFAULTS = (
+my @HEADER_KEYS     = map {$_->[0]} @header;
+my @HEADER_FORMATS  = map {$_->[1]} @header;
+my @HEADER_DEFAULTS = (
     undef,
     undef,
     undef,
@@ -40,19 +40,54 @@ our @HEADER_DEFAULTS = (
     '8bit',
     undef,
 );
-our @HEADER_REGEX = (
-    qr{\A \QProject-Id-Version:\E        \s (.*) \z}xms,
-    qr{\A \QPOT-Creation-Date:\E         \s (.*) \z}xms,
-    qr{\A \QPO-Revision-Date:\E          \s (.*) \z}xms,
-    qr{\A \QLast-Translator:\E           \s ([^<]*) \s < ([^>]*) > }xms,
-    qr{\A \QLanguage-Team:\E             \s ([^<]*) \s < ([^>]*) > }xms,
-    qr{\A \QMIME-Version:\E              \s (.*) \z}xms,
-    qr{\A \QContent-Type:\E              \s ([^;]*); \s charset=(\S*) }xms,
-    qr{\A \QContent-Transfer-Encoding:\E \s (.*) \z}xms,
+my @HEADER_REGEX = (
+    qr{\A \QProject-Id-Version:\E        \s (.*) \z}xmsi,
+    qr{\A \QPOT-Creation-Date:\E         \s (.*) \z}xmsi,
+    qr{\A \QPO-Revision-Date:\E          \s (.*) \z}xmsi,
+    qr{\A \QLast-Translator:\E           \s ([^<]*) \s < ([^>]*) > }xmsi,
+    qr{\A \QLanguage-Team:\E             \s ([^<]*) \s < ([^>]*) > }xmsi,
+    qr{\A \QMIME-Version:\E              \s (.*) \z}xmsi,
+    qr{\A \QContent-Type:\E              \s ([^;]*); \s charset=(\S*) }xmsi,
+    qr{\A \QContent-Transfer-Encoding:\E \s (.*) \z}xmsi,
     qr{\A ([^:]*):                       \s (.*) \z}xms,
 );
 
-sub quote ($$;$) {
+my $maketext_to_gettext_scalar = sub {
+    my $string = shift;
+
+    defined $string
+        or return;
+    $string =~ s{
+        \[ \s*
+        (?:
+            ( [A-Za-z*\#] \w* ) # $1 - function call
+            \s* , \s*
+            _ ( [1-9]\d* )      # $2 - variable
+            ( [^\]]* )          # $3 - arguments
+            |                   # or
+            _ ( [1-9]\d* )      # $4 - variable
+        )
+        \s* \]
+    }
+    {
+        $4 ? "%$4" : "%$1(%$2$3)"
+    }xmsge;
+
+    return $string;
+};
+
+sub maketext_to_gettext {
+    my($self, @strings) = @_;
+
+    return
+        @strings > 1
+        ? map { $maketext_to_gettext_scalar->($_) } @strings
+        : @strings
+          ? $maketext_to_gettext_scalar->( $strings[0] )
+          : ();
+}
+
+sub quote {
     my($self, $string, $type) = @_;
 
     defined $string
@@ -322,6 +357,8 @@ sub get_header_msgstr_data {
 __END__
 
 =head1 SUBROUTINES/METHODS
+
+=head2 method maketext_to_gettext
 
 =head2 method quote
 

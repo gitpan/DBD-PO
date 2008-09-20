@@ -13,12 +13,11 @@ $ENV{TEST_EXAMPLE} or plan(
 plan(tests => 2);
 
 is(
-    run_example('write.pl'),
+    run_example('01_write.pl'),
     q{},
-    'run write.pl',
+    'run 01_write.pl',
 );
 ok(
     -e $FILE_2X,
     "$TABLE_2X exists",
 );
-
