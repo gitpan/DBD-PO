@@ -2,7 +2,7 @@
 
 # Lexicon
 {
-    package Example::I18N;
+    package Example::L10N;
 
     use strict;
     use warnings;
@@ -33,7 +33,7 @@ use warnings;
 
 use Data::Dumper ();
 
-my $lh = Example::I18N->get_handle('en') or die 'What language';
+my $lh = Example::L10N->get_handle('en') or die 'What language';
 
 my @output = map {
     ref $_

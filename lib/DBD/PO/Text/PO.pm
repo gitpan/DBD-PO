@@ -88,25 +88,9 @@ sub new {
     return bless $options, $class;
 }
 
-sub _binmode {
-    my ($self, $file) = @_;
-
-    if (
-        exists $self->{encoding}
-        && ! exists $self->{file_encoding}->{$file}
-    ) {
-        binmode $file, $self->{encoding}
-            or croak "binmode: $!";
-        $self->{file_encoding}->{$file} = $self->{encoding};
-    }
-
-    return;
-}
-
 sub print {
     my ($self, $file, $col_ref) = @_;
 
-    $self->_binmode($file);
     my %line;
     for my $index (0 .. $#COL_NAMES) {
         my $parameter = $COL_PARAMETERS[$index];
@@ -186,18 +170,21 @@ sub print {
 sub getline {
     my ($self, $file) = @_;
 
-    $self->_binmode($file);
-    if (! $self->{po_iterator}) {
-        $self->{po_iterator}
-            = DBD::PO::Locale::PO->load_file_asarray($file, $self->{eol});
+    if (! defined $self->{line_number}) {
+        $self->{line_number} = 0;
     }
+    my $po = DBD::PO::Locale::PO->load_entry(
+        $file,
+        $file,
+        \$self->{line_number},
+        $self->{eol},
+    );
     # EOF
-    if (! @{ $self->{po_iterator} }) {
-        delete $self->{po_iterator};
+    if (! $po) {
+        delete $self->{line_number};
         return [];
     }
     # run a line, it is a po object
-    my $po = shift @{ $self->{po_iterator} };
     my @cols;
     my $index = 0;
     METHOD:

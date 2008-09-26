@@ -15,5 +15,5 @@ plan(tests => 1);
 is(
     run_example('02_read_using_Locale-Maketext.pl'),
     q{},
-    '02_read_using_Locale-Maketext.pl',
+    'run 02_read_using_Locale-Maketext.pl',
 );

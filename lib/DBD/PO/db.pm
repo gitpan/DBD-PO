@@ -60,12 +60,12 @@ my $maketext_to_gettext_scalar = sub {
     $string =~ s{
         \[ \s*
         (?:
-            ( [A-Za-z*\#] \w* ) # $1 - function call
+            ( [A-Za-z*\#] [A-Za-z_]* ) # $1 - function call
             \s* , \s*
-            _ ( [1-9]\d* )      # $2 - variable
-            ( [^\]]* )          # $3 - arguments
-            |                   # or
-            _ ( [1-9]\d* )      # $4 - variable
+            _ ( [1-9]\d* )             # $2 - variable
+            ( [^\]]* )                 # $3 - arguments
+            |                          # or
+            _ ( [1-9]\d* )             # $4 - variable
         )
         \s* \]
     }

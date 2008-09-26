@@ -10,7 +10,7 @@ use Carp qw(croak);
 use DBD::PO::Text::PO qw($EOL_DEFAULT $SEPARATOR_DEFAULT @COL_NAMES);
 
 sub open_table {
-    my($self, $data, $table, $createMode, $lockMode) = @_;
+    my ($self, $data, $table, $createMode, $lockMode) = @_;
 
     my $dbh = $data->{Database};
     my $tables = $dbh->{po_tables};
@@ -48,6 +48,17 @@ sub open_table {
                || $table;
     my $tbl = $self->SUPER::open_table($data, $file, $createMode, $lockMode);
     if ($tbl) {
+        {
+            my $po_charset = exists $meta->{charset}
+                             ? $meta->{charset}
+                             : $dbh->{po_charset}
+                               ? $dbh->{po_charset}
+                               : undef;
+            if ($po_charset) {
+                $tbl->{fh}->binmode("encoding($po_charset)")
+                    or croak "binmode $!";
+            }
+        }
         $tbl->{po_po} = $po;
         my $types = $meta->{types};
         if ($types) {

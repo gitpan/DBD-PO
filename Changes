@@ -1,5 +1,12 @@
 Revision history for Perl extension DBD::PO.
 
+0.10  Fri Sep 26 22:00:00 2008
+- tenth developer test version
+- code_ref $maketext_to_gettext_scalar at DBD::PO::db is unicode safe now
+- more POD for DBD::PO
+- change from load_file_asarray to load_entry
+- bugfix binmode
+
 0.09  Sat Sep 20 22:00:00 2008
 - ninth developer test version
 - change header parser to non case sensitive

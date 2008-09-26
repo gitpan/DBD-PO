@@ -9,10 +9,16 @@ use Test::DBD::PO::Defaults qw(
     $TABLE_12 $FILE_12
 );
 use Test::More tests => 22;
+use charnames qw(:full);
 
 BEGIN {
     require_ok('DBI');
 }
+
+my @test_data = (
+    "\N{LATIN CAPITAL LETTER A WITH DIAERESIS}",
+    "\N{CYRILLIC CAPITAL LETTER ZHE}",
+);
 
 # build table
 my $dbh = DBI->connect(
@@ -108,7 +114,7 @@ sub insert_line {
 
     my $table = $param->{table};
 
-    my $result = $dbh->do(<<"EO_SQL", undef, $table, $table);
+    my $result = $dbh->do(<<"EO_SQL", undef, $test_data[0], $test_data[1]);
         INSERT INTO $table (
             msgid,
             msgstr
@@ -139,7 +145,7 @@ sub execute {
 
     my $table = $param->{table};
 
-    my $result = $param->{sth}->execute($table);
+    my $result = $param->{sth}->execute($test_data[0]);
     is($result, 1, "insert $table");
 
     return $param;
@@ -151,7 +157,7 @@ sub fetch {
     my $table = $param->{table};
 
     my ($result) = $param->{sth}->fetchrow_array();
-    is($result, $table, "fetch $table");
+    is($result, $test_data[1], "fetch $table");
 
     return $param;
 }

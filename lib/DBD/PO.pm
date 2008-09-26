@@ -11,7 +11,7 @@ use DBD::PO::Statement;
 use DBD::PO::Table;
 use DBD::PO::st;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 our $drh = ();       # holds driver handle once initialised
 our $err = 0;        # holds error code   for DBI::err
@@ -26,13 +26,13 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 225 2008-09-20 18:42:26Z steffenw $
+$Id: PO.pm 238 2008-09-26 07:55:36Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
 =head1 VERSION
 
-0.09
+0.10
 
 =head1 SYNOPSIS
 
@@ -47,22 +47,30 @@ $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD
         . 'f_dir=dir_x;'      # optional:
                               #  The default database is './',
                               #  here set to the directory 'dir_x'.
+                              #  The default value is often unuseful.
         . "po_separator=\n;"  # optional:
                               #  The default 'po_separator' to set/get
                               #  concatinated data is "\n",
                               #  here set to "\n" unnecessary.
+                              #  The default value is mostly useful
+                              #  because the internal representation
+                              #  of line ending is \n (Windows too).
+                              #  This is different for binary IO.
         . "po_eol=$LF;"       # optional:
                               #  The default 'po_eol' (po end of line)
                               #  is network typical like 'use Socket qw($CRLF)',
                               #  here set to $LF like 'use Socket qw($LF)'.
+                              #  The default value is mostly useful.
         . 'po_charset=utf-8', # optional:
                               #  Write nothing for 'iso-8859-1' files
                               #  and use bytes internal.
+                              #  (It is not a good idea.)
                               #  Write 'utf-8' for 'utf-8' files
                               #  and use unicode chars internal.
                               #  Write 'iso-8859-1' for 'iso-8859-1' files
                               #  and use unicode chars internal
                               #  and so on for other charsets.
+                              #  The default value is mostly not useful.
         undef,                # Username is not used.
         undef,                # Password is not used.
         {
@@ -73,7 +81,8 @@ $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD
 
 =head2 create table
 
-Note that currently only the column names will be stored and no other data.
+Note that no column names will be stored.
+They are fixed.
 Thus all other information including column type (INTEGER or CHAR(x),
 for example), column attributes (NOT NULL, PRIMARY KEY, ...)
 will silently be discarded.
@@ -92,15 +101,15 @@ Columns:
 
 =item * comment
 
-translator comment text concatinated by 'separator'
+translator comment text concatinated by 'po_separator'
 
 =item * automatic
 
-automatic comment text concatinated by 'separator'
+automatic comment text concatinated by 'po_separator'
 
 =item * reference
 
-where the text to translate is from, concatinated by 'separator'
+where the text to translate is from, concatinated by 'po_separator'
 
 =item * obsolete
 
@@ -122,9 +131,17 @@ format flag, not set (0), set (1) or negative set (-1)
 
 the text to translate (emty string for header)
 
+The 'msgid' can contain Locale::Maketext placeholders.
+They have to be stored in gettext format.
+To change the format, use the database handle function 'maketext_to_gettext'.
+
 =item * msgstr
 
 the translation
+
+The 'msgid' can contain Locale::Maketext placeholder.
+They have to be stored in gettext format.
+To change the format, use the database handle function 'maketext_to_gettext'.
 
 =back
 
@@ -147,10 +164,11 @@ the translation
 
 =head3 build msgstr
 
-=head4 minimized example
+The charset will set to the as parameter 'po_charset' given value
+at the connect method.
+Note that the default encoding is nothing, not 'utf-8'.
 
-The charset will set to the in parameter 'charset' given value
-at the connect method or to the default 'utf-8'.
+=head4 minimized example
 
     my $header_msgstr = $dbh->func(
         undef,
@@ -164,7 +182,7 @@ at the connect method or to the default 'utf-8'.
         [
             # project
             'Project name',
-            # ISO time format like yyyy-mmm-dd hh::mm:ss +00:00
+            # ISO 8601 time format like [YYYY]-[MM]-[DD]T[hh]::[mm]:[ss]Z
             'the POT creation date',
             'the PO revision date',
             # last translator name and mail address
@@ -226,7 +244,10 @@ at the connect method or to the default 'utf-8'.
 Write the header row always at first!
 
     use Socket qw($CRLF);
-    my $separator = $CRLF; # but it is more easy to use \n as separator
+    my $separator = $CRLF; # But it is more easy
+                           # to use the po_separator default \n
+                           # and than the join is obsolete
+                           # because the strings typical including \n.
 
     my $header_comment = join(
         $separator,
@@ -243,7 +264,7 @@ EOT
 
 =head2 write a row
 
-=head2 without Locale::Maketext placeholder
+=head2 without Locale::Maketext placeholders (not typical)
 
     my $sth = $dbh->prepare(<<'EOT');
         INSERT INTO table.po (
@@ -271,7 +292,7 @@ EOT
         ),
     );
 
-=head2 with Locale::Maketext placeholder
+=head2 with Locale::Maketext placeholders
 
     my $sth = $dbh->prepare(<<'EOT');
         INSERT INTO table.po (
@@ -283,7 +304,10 @@ EOT
 
     $sth->execute(
         $dbh->func(
-            # mapping: 2 values given - 2 returns
+            # mapping:
+            # - scalar to scalar
+            # - or array to array
+            # - here 2 values given to 2 returns
             join(
                 $separator,
                 'text to translate',
@@ -309,7 +333,7 @@ EOT
 
 =head4 read only 1 header information
 
-Scalar to Scalar mapping.
+Scalar to scalar mapping.
 
     my $charset = $dhh->func(
         {table => 'table_name'},
@@ -373,7 +397,7 @@ Arrayref to arrayref mapping.
         'get_header_msgstr_data',
     );
 
-=head3 not easy, implicit SQL call  (do not use)
+=head3 not easy, implicit SQL call (do not use)
 
     # extract the header data
     my $header_struct = $dbh->func(
@@ -453,6 +477,29 @@ See DBI for details on DBI, L<SQL::Statement> for details on
 SQL::Statement and L<DBD::File> for details on the base class
 DBD::File.
 
+     ---------------------
+    |         DBI         |
+     ---------------------
+               |
+     ---------------------
+    |      DBD::File      |
+    |  (SQL::Statement)   |
+     ---------------------
+               |
+     ---------------------
+    |       DBD::PO       |
+     ---------------------
+               |
+     ---------------------
+    |  DBD::PO::Text::PO  |
+     ---------------------
+               |
+     ---------------------
+    | DBD::PO::Locale::PO |
+     ---------------------
+               |
+         table_file.po
+
 =head1 SUBROUTINES/METHODS
 
 nothing in this module
@@ -518,7 +565,7 @@ DBI
 
 L<DBD::File>
 
-L<Locale::PO>
+L<Locale::PO> has bugs, more than documented
 
 L<DBD::CSV>
 
