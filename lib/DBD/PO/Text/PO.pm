@@ -3,7 +3,10 @@ package DBD::PO::Text::PO;
 use strict;
 use warnings;
 
+our $VERSION = '1.00';
+
 use Carp qw(croak);
+use English qw(-no_match_vars $OS_ERROR);
 use Params::Validate qw(:all);
 use DBD::PO::Locale::PO;
 use Socket qw($CRLF);
@@ -35,9 +38,7 @@ our @COL_NAMES       = map {$_->[0]} @cols;
 my  @COL_PARAMETERS  = map {$_->[1]} @cols;
 my  @COL_METHODS     = map {$_->[2]} @cols;
 
-sub _dequote {
-    caller eq __PACKAGE__
-        or croak 'Do not call a private sub';
+my $dequote = sub {
     my $string = shift;
 
     return if $string eq 'NULL';
@@ -46,16 +47,14 @@ sub _dequote {
     }
 
     return $string;
-}
+};
 
-sub _array_from_anything {
-    caller eq __PACKAGE__
-        or croak 'Do not call a private sub';
+my $array_from_anything = sub {
     my ($self, $anything) = @_;
 
-    my @array = map {
-        $_ = _dequote $_;
-        split m{\Q$self->{separator}\E}xms, $_;
+    my @array = map { ## no critic (ComplexMappings)
+        my $dequoted = $dequote->($_);
+        split m{\Q$self->{separator}\E}xms, $dequoted;
     } ref $anything eq 'ARRAY'
       ? @{$anything}
       : defined $anything
@@ -65,7 +64,7 @@ sub _array_from_anything {
     return \@array;
 };
 
-sub new {
+sub new { ## no critic (RequireArgUnpacking)
     my ($class, $options) = validate_pos(
         @_,
         {type => SCALAR},
@@ -74,8 +73,8 @@ sub new {
     $options = validate_with(
         params => $options,
         spec   => {
-            eol       => {default => $EOL_DEFAULT},
-            separator => {default => $SEPARATOR_DEFAULT},
+            eol       => {default  => $EOL_DEFAULT},
+            separator => {default  => $SEPARATOR_DEFAULT},
             charset   => {optional => 1},
         },
         called => "2nd parameter of new('$class', \$parameter)",
@@ -88,17 +87,17 @@ sub new {
     return bless $options, $class;
 }
 
-sub print {
-    my ($self, $file, $col_ref) = @_;
+sub write_entry { ## no critic (ExcessComplexity)
+    my ($self, $file_name, $file_handle, $col_ref) = @_;
 
     my %line;
     for my $index (0 .. $#COL_NAMES) {
         my $parameter = $COL_PARAMETERS[$index];
-        my $values    = _array_from_anything($self, $col_ref->[$index]);
+        my $values    = $array_from_anything->($self, $col_ref->[$index]);
         if (
-           $parameter eq '-comment'
-           || $parameter eq '-automatic'
-           || $parameter eq '-reference'
+            $parameter eq '-comment'
+            || $parameter eq '-automatic'
+            || $parameter eq '-reference'
         ) {
             if (@{$values}) {
                 $line{$parameter} = join $self->{eol}, @{$values};
@@ -131,24 +130,24 @@ sub print {
             }
         }
         else {
-            if (@{$values}) {
+            if ( @{$values} ) {
                 $line{$parameter} = join "\n", @{$values};
-                if (! tell $file) {
+                if (! tell $file_handle) {
                     if ($parameter eq '-msgid') {
                         croak 'A header has no msgid';
                     }
                     else { # -msgstr
-                        if ($line{$parameter} !~ m{\b charset =}xms) {
+                        if ($line{$parameter} !~ m{\b charset =}xms) { ## no critic (DeepNests)
                             croak 'This can not be a header';
                         }
                     }
                 }
             }
             else {
-                if ($parameter eq '-msgid' && tell $file) {
+                if ($parameter eq '-msgid' && tell $file_handle) {
                     croak 'A line has to have a msgid';
                 }
-                elsif ($parameter eq '-msgstr' && ! tell $file
+                elsif ($parameter eq '-msgstr' && ! tell $file_handle
                 ) {
                     croak 'A header has to have a msgstr';
                 }
@@ -162,20 +161,21 @@ sub print {
         '-msgstr' => q{},
         %line,
     )->dump();
-    print $file $line;
+    print {$file_handle} $line
+        or croak "Print $file_name: $OS_ERROR";
 
-    return 1;
+    return $self;
 }
 
-sub getline {
-    my ($self, $file) = @_;
+sub read_entry { ## no critic (ExcessComplexity)
+    my ($self, $file_name, $file_handle) = @_;
 
     if (! defined $self->{line_number}) {
         $self->{line_number} = 0;
     }
     my $po = DBD::PO::Locale::PO->load_entry(
-        $file,
-        $file,
+        $file_name,
+        $file_handle,
         \$self->{line_number},
         $self->{eol},
     );
@@ -221,7 +221,7 @@ sub getline {
             # 1     => 1
             $cols[$index] = defined $flag
                             ? (
-                                $flag ? 1 : -1
+                                $flag ? 1 : -1 ## no critic (MagicNumbers)
                             )
                             : 0;
         }
@@ -241,12 +241,169 @@ sub getline {
 
 __END__
 
+=head1 NAME
+
+DBD::PO::Text::PO - read or write a PO file entry by entry
+
+$Id: PO.pm 254 2008-10-21 19:11:47Z steffenw $
+
+$HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/Text/PO.pm $
+
+=head1 VERSION
+
+1.00
+
+=head1 SYNOPSIS
+
+=head2 write
+
+    use strict;
+    use warnings;
+
+    use Carp qw(croak);
+    use English qw(-no_match_vars $OS_ERROR);
+    require IO::File;
+    require DBD::PO::Text::PO;
+
+    my $file_handle = IO::File->new();
+    $file_handle->open(
+        $file_name,
+        '> :encoding(utf-8)',
+    ) or croak "Can not open file $file_name: $OS_ERROR;
+    my $text_po = DBD::PO::Text::PO->new({
+        eol     => "\n",
+        charset => 'utf-8',
+    });
+
+    # header
+    $text_po->write_entry(
+        $file_name,
+        $file_handle,
+        [
+            q{},
+            'Content-Type: text/plain; charset=utf-8',
+        ],
+    );
+
+    # line
+    $text_po->write_entry(
+        $file_name,
+        $file_handle,
+        [
+            'id',
+            'text',
+        ],
+    );
+
+=head2 read
+
+    use strict;
+    use warnings;
+
+    use Carp qw(croak);
+    use English qw(-no_match_vars $OS_ERROR);
+    require IO::File;
+    require DBD::PO::Text::PO;
+
+    my $file_handle = IO::File->new();
+    $file_handle->open(
+        $file_name,
+        '< :encoding(utf-8)',
+    ) or croak "Can not open file $file_name: $OS_ERROR;
+    my $text_po = DBD::PO::Text::PO->new({
+        eol     => "\n",
+        charset => 'utf-8',
+    });
+
+    # header
+    my $header_array_ref = $text_po->read_entry($file_name, $file_handle);
+
+    # line
+    while ( @{ my $array_ref = $text_po->read_entry($file_name, $file_handle) } ) {
+        print "id: $array_ref->[0], text: $array_ref->[1]\n";
+    }
+
+=head1 DESCRIPTION
+
+The DBD::PO::Text::PO was written as wrapper between
+DBD::PO and DBD::PO::Locale::PO.
+
+     ---------------------
+    |         DBI         |
+     ---------------------
+               |
+     ---------------------
+    |      DBD::File      |
+    |  (SQL::Statement)   |
+     ---------------------
+               |
+     ---------------------
+    |       DBD::PO       |
+     ---------------------
+               |
+     ---------------------
+    |  DBD::PO::Text::PO  |
+     ---------------------
+               |
+     ---------------------
+    | DBD::PO::Locale::PO |
+     ---------------------
+               |
+         table_file.po
+
 =head1 SUBROUTINES/METHODS
 
 =head2 method new
 
-=head2 method print
+=head2 method write_entry
 
-=head2 method getline
+=head2 method read_entry
+
+=head1 DIAGNOSTICS
+
+none
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+none
+
+=head1 DEPENDENCIES
+
+Carp
+
+English
+
+L<Params::Validate>
+
+L<DBD::PO::Locale::PO>
+
+Socket
+
+=head1 INCOMPATIBILITIES
+
+not known
+
+=head1 BUGS AND LIMITATIONS
+
+not known
+
+=head1 SEE ALSO
+
+L<DBD::CSV>
+
+=head1 AUTHOR
+
+Steffen Winkler
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (c) 2008,
+Steffen Winkler
+C<< <steffenw at cpan.org> >>.
+All rights reserved.
+
+This module is free software;
+you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut

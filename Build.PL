@@ -15,14 +15,18 @@ Module::Build->new(
         'SQL::Statement'   => 0, # for SQL::Parser
         'Params::Validate' => 0,
         # Carp             => 0, # perl dist
+        # English          => 0, # perl dist
         # Socket           => 0, # perl dist
         # Storable         => 0, # perl dist
     },
     build_requires => {
-        'Test::Simple' => 0, # for Test::More
-        Encode         => 0,
-        # Cwd          => 0, # perl dist
-        # charnames    => 0, # perl dist
+        'Test::Simple'      => 0, # for Test::More
+        'Test::NoWarnings'  => 0,
+        'Test::Exception'   => 0,
+        'Test::Differences' => 0,
+        Encode              => 0,
+        # Cwd               => 0, # perl dist
+        # charnames         => 0, # perl dist
     },
     recommends => {
         'DBD::File'           => 0,
@@ -30,7 +34,6 @@ Module::Build->new(
         # build
         'Test::Pod'           => '1.14',
         'Test::Pod::Coverage' => '1.04',
-        'Test::Differences'   => 0,
         'Test::More'          => 0,
     },
     create_makefile_pl   => 'traditional',

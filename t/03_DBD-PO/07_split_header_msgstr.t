@@ -8,7 +8,8 @@ use Test::DBD::PO::Defaults qw(
     trace_file_name
     $TABLE_0X
 );
-use Test::More tests => 5;
+use Test::More tests => 5 + 1;
+use Test::NoWarnings;
 
 BEGIN {
     require_ok('DBI');

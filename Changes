@@ -1,5 +1,10 @@
 Revision history for Perl extension DBD::PO.
 
+1.00  Tue Oct 21 21:20:00 2008
+- 1st stable version
+- POD
+- perl critic
+
 0.10  Fri Sep 26 22:00:00 2008
 - tenth developer test version
 - code_ref $maketext_to_gettext_scalar at DBD::PO::db is unicode safe now

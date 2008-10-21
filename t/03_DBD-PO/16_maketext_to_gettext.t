@@ -3,7 +3,8 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use Test::More tests => 12 + 1;
+use Test::NoWarnings;
 
 BEGIN {
     require_ok('DBI');

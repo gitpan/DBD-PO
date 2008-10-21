@@ -8,7 +8,8 @@ use Test::DBD::PO::Defaults qw(
     trace_file_name
     $TABLE_12 $FILE_12
 );
-use Test::More tests => 22;
+use Test::More tests => 22 + 1;
+use Test::NoWarnings;
 use charnames qw(:full);
 
 BEGIN {

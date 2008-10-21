@@ -3,16 +3,15 @@
 use strict;
 use warnings;
 
+use Carp qw(croak);
+use English qw(-no_match_vars $OS_ERROR $INPUT_RECORD_SEPARATOR);
 use Test::DBD::PO::Defaults qw(
     $PATH $TRACE $SEPARATOR $EOL
     trace_file_name $TABLE_0X $FILE_0X
 );
-use Test::More tests => 10;
-eval 'use Test::Differences qw(eq_or_diff)';
-if ($@) {
-    *eq_or_diff = \&is;
-    diag('Module Test::Differences not installed');
-}
+use Test::More tests => 10 + 1;
+use Test::NoWarnings;
+use Test::Differences;
 
 BEGIN {
     require_ok('DBI');
@@ -144,8 +143,8 @@ msgid "id_2"
 msgstr "str_2"
 
 EOT
-    open my $file, '< :raw', $FILE_0X or die $!;
-    local $/ = ();
+    open my $file, '< :raw', $FILE_0X or croak $OS_ERROR;
+    local $INPUT_RECORD_SEPARATOR = ();
     my $content = <$file>;
     $po =~ s{\n}{$EOL}xmsg;
     eq_or_diff($content, $po, 'check po file');

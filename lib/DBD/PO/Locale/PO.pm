@@ -6,10 +6,10 @@ use warnings;
 our $VERSION = '0.21.01';
 
 use Carp qw(croak);
+use English qw(-no_match_vars $EVAL_ERROR $OS_ERROR);
 
 sub new {
-    my $this    = shift;
-    my %options = @_;
+    my ($this, %options) = @_;
 
     my $class = ref($this) || $this;
     my $self = bless {}, $class;
@@ -20,157 +20,184 @@ sub new {
         comment fuzzy automatic reference obsolete
         loaded_line_number
     )) {
-        $self->$_( $options{"-$_"} )
-            if defined $options{"-$_"};
+        if ( defined $options{"-$_"} ) {
+            $self->$_( $options{"-$_"} );
+        }
     }
-    $self->c_format(1)
-        if defined( $options{'-c-format'} );
-    $self->c_format(0)
-        if defined( $options{'-no-c-format'} );
-    $self->php_format(1)
-        if defined( $options{'-php-format'} );
-    $self->php_format(0)
-        if defined( $options{'-no-php-format'} );
+    if ( defined $options{'-c-format'} ) {
+        $self->c_format(1);
+    }
+    if ( defined $options{'-no-c-format'} ) {
+        $self->c_format(0);
+    }
+    if ( defined $options{'-php-format'} ) {
+        $self->php_format(1);
+    }
+    if ( defined $options{'-no-php-format'} ) {
+        $self->php_format(0);
+    }
 
     return $self;
 }
 
 sub eol {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    if (@_) {
-        my $eol = shift;
+    if (@params) {
+        my $eol = shift @params;
         $self->{eol} = $eol;
     }
 
-    return defined $self->{eol} ? $self->{eol} : "\n";
+    return defined $self->{eol}
+           ? $self->{eol}
+           : "\n";
 }
 
 sub msgctxt {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    @_ ? $self->{msgctxt} = shift : $self->{msgctxt};
+    return @params
+           ? $self->{msgctxt} = shift @params
+           : $self->{msgctxt};
 }
 
 sub msgid {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    @_ ? $self->{msgid} = shift : $self->{msgid};
+    return @params
+           ? $self->{msgid} = shift @params
+           : $self->{msgid};
 }
 
 sub msgid_plural {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    @_ ? $self->{msgid_plural} = shift : $self->{msgid_plural};
+    return @params
+           ? $self->{msgid_plural} = shift @params
+           : $self->{msgid_plural};
 }
 
 sub msgstr {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    @_ ? $self->{msgstr} = shift : $self->{msgstr};
+    return @params
+           ? $self->{msgstr} = shift @params
+           : $self->{msgstr};
 }
 
 sub msgstr_n {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    if (@_) {
-        my $hashref = shift;
+    if (@params) {
+        my $hashref = shift @params;
 
         # check that we have a hashref.
-        croak
-            'Argument to msgstr_n must be a hashref: { n => "string n", ... }.'
-            unless ref($hashref) eq 'HASH';
+        ref $hashref eq 'HASH'
+            or croak 'Argument to msgstr_n must be a hashref: { n => "string n", ... }.';
 
         # Check that the keys are all numbers.
-        croak 'Keys to msgstr_n hashref must be numbers'
-            if grep { m{\D}xms } keys %{$hashref};
+        for ( keys %{$hashref} ) {
+            croak 'Keys to msgstr_n hashref must be numbers'
+                if ! defined $_ || m{\D}xms;
+        }
 
         # Write all the values in the hashref.
-        $self->{msgstr_n}->{$_} = $hashref->{$_}
-            for keys %{$hashref};
+        @{ $self->{msgstr_n} }{ keys %{$hashref} } = values %{$hashref};
     }
 
     return $self->{msgstr_n};
 }
 
 sub comment {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    @_ ? $self->{comment} = shift : $self->{comment};
+    return @params
+           ? $self->{comment} = shift @params
+           : $self->{comment};
 }
 
 sub automatic {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    @_ ? $self->{automatic} = shift : $self->{automatic};
+    return @params
+           ? $self->{automatic} = shift @params
+           : $self->{automatic};
 }
 
 sub reference {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    @_ ? $self->{reference} = shift : $self->{reference};
+    return @params
+           ? $self->{reference} = shift @params
+           : $self->{reference};
 }
 
 sub obsolete {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    @_ ? $self->{obsolete} = shift : $self->{obsolete};
+    return @params
+           ? $self->{obsolete} = shift @params
+           : $self->{obsolete};
 }
 
 sub fuzzy {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    if (@_) {
-        my $value = shift;
-        $value ? $self->add_flag('fuzzy') : $self->remove_flag('fuzzy');
+    if (@params) {
+        my $value = shift @params;
+        return $value
+               ? $self->add_flag('fuzzy')
+               : $self->remove_flag('fuzzy');
     }
 
     return $self->has_flag('fuzzy');
 }
 
 sub c_format {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    return $self->_tri_value_flag('c-format', @_);
+    return $self->_tri_value_flag('c-format', @params);
 }
 
 sub php_format {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    return $self->_tri_value_flag('php-format', @_);
+    return $self->_tri_value_flag('php-format', @params);
 }
 
 sub _flags {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    @_ ? $self->{_flags} = shift : $self->{_flags};
+    return @params
+           ? $self->{_flags} = shift @params
+           : $self->{_flags};
 }
 
 sub _tri_value_flag {
-    my $self = shift;
-    my $flag_name = shift;
-    if (@_) { # set or clear the flags
-        my $value = shift;
-        if (!defined($value) || $value eq "") {
-            $self->remove_flag("$flag_name");
+    my ($self, $flag_name, @params) = @_;
+
+    if (@params) { # set or clear the flags
+        my $value = shift @params;
+        if (! defined($value) || ! length $value) {
+            $self->remove_flag($flag_name);
             $self->remove_flag("no-$flag_name");
-            return undef;
+            return scalar +();
         }
         elsif ($value) {
-            $self->add_flag("$flag_name");
+            $self->add_flag($flag_name);
             $self->remove_flag("no-$flag_name");
             return 1;
         }
         else {
             $self->add_flag("no-$flag_name");
-            $self->remove_flag("$flag_name");
+            $self->remove_flag($flag_name);
             return 0;
         }
     }
     else { # check the flags
-        return 1 if $self->has_flag("$flag_name");
+        return 1 if $self->has_flag($flag_name);
         return 0 if $self->has_flag("no-$flag_name");
-        return undef;
+        return scalar +();
     }
 }
 
@@ -201,39 +228,56 @@ sub has_flag {
 }
 
 sub loaded_line_number {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    @_ ? $self->{loaded_line_number} = shift : $self->{loaded_line_number};
+    return @params
+           ? $self->{loaded_line_number} = shift @params
+           : $self->{loaded_line_number};
 }
 
-sub dump {
+sub dump { ## no critic (BuiltinHomonyms)
     my $self = shift;
 
     my $obsolete = $self->obsolete() ? '#~ ' : q{};
     my $dump = q{};
-    $dump .= $self->_dump_multi_comment( $self->comment(), "# " )
-        if defined $self->comment();
-    $dump .= $self->_dump_multi_comment( $self->automatic(), "#. " )
-        if defined $self->automatic();
-    $dump .= $self->_dump_multi_comment( $self->reference(), "#: " )
-        if defined $self->reference();
-
+    if ( defined $self->comment() ) {
+        $dump .= $self->_dump_multi_comment( $self->comment(), '# ' );
+    }
+    if ( defined $self->automatic() ) {
+        $dump .= $self->_dump_multi_comment( $self->automatic(), '#. ' );
+    }
+    if ( defined $self->reference() ) {
+        $dump .= $self->_dump_multi_comment( $self->reference(), '#: ' );
+    }
     my $flags = join q{}, map {", $_"} sort keys %{ $self->_flags() };
-    $dump .= "#$flags" . $self->eol()
-        if $flags;
+    if ($flags) {
+        $dump .= "#$flags"
+                 . $self->eol();
+    }
+    if ( defined $self->msgctxt() ) {
+        $dump .= "${obsolete}msgctxt "
+                 . $self->quote( $self->msgctxt() );
+    }
+    $dump .= "${obsolete}msgid "
+             . $self->quote( $self->msgid() );
+    if ( defined $self->msgid_plural() ) {
+        $dump .= "${obsolete}msgid_plural "
+                 . $self->quote( $self->msgid_plural() );
+    }
+    if ( defined $self->msgstr() ) {
+        $dump .= "${obsolete}msgstr "
+                 . $self->quote( $self->msgstr() );
 
-    $dump .= "${obsolete}msgctxt " . $self->quote( $self->msgctxt() )
-        if defined $self->msgctxt();
-    $dump .= "${obsolete}msgid " . $self->quote( $self->msgid() );
-    $dump .= "${obsolete}msgid_plural " . $self->quote( $self->msgid_plural() )
-        if defined $self->msgid_plural();
-
-    $dump .= "${obsolete}msgstr " . $self->quote( $self->msgstr() )
-        if defined $self->msgstr();
-
+    }
     if ( my $msgstr_n = $self->msgstr_n() ) {
-        $dump .= "${obsolete}msgstr[$_] " . $self->quote( $msgstr_n->{$_} )
-            for sort { $a <=> $b } keys %{$msgstr_n};
+        $dump .= join
+            q{},
+            map {
+                "${obsolete}msgstr[$_] "
+                . $self->quote( $msgstr_n->{$_} );
+            } sort {
+                $a <=> $b
+            } keys %{$msgstr_n};
     }
 
     $dump .= $self->eol();
@@ -259,17 +303,19 @@ sub quote {
     my $string = shift;
 
     if (! defined $string) {
-        return qq{""};
+        return q{""};
     }
     my %named = (
+        ## no critic (InterpolationOfLiterals)
         #qq{\a} => qq{\\a}, # BEL
         #qq{\b} => qq{\\b}, # BS
         #qq{\t} => qq{\\t}, # TAB
-        qq{\n} => qq{\\n}, # LF
+        qq{\n}  => qq{\\n}, # LF
         #qq{\f} => qq{\\f}, # FF
         #qq{\r} => qq{\\r}, # CR
-        qq{"}  => qq{\\"},
-        qq{\\} => qq{\\\\},
+        qq{"}   => qq{\\"},
+        qq{\\}  => qq{\\\\},
+        ## use critic (InterpolationOfLiterals)
     );
     $string =~ s{
         ( [^ !#$%&'()*+,\-.\/0-9:;<=>?@A-Z\[\]\^_`a-z{|}~] )
@@ -315,42 +361,48 @@ sub dequote {
         )
     }xms; # check the quoted string and untaint
     return q{} if ! defined $string;
-    my $dequoted = eval $string;
-    croak "Can not eval string\n$string\n$@" if $@;
+    my $dequoted = eval $string; ## no critic (StringyEval)
+    croak qq{Can not eval string "$string": $EVAL_ERROR} if $EVAL_ERROR;
 
     return $dequoted;
 }
 
 sub save_file_fromarray {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    $self->_save_file(@_, 0);
+    return $self->_save_file(@params, 0);
 }
 
 sub save_file_fromhash {
-    my $self = shift;
+    my ($self, @params) = @_;
 
-    $self->_save_file(@_, 1);
+    return $self->_save_file(@params, 1);
 }
 
 sub _save_file {
-    my $self    = shift;
-    my $file    = shift;
-    my $entries = shift;
+    my $self     = shift;
+    my $file     = shift;
+    my $entries  = shift;
     my $as_hash  = shift;
 
-    open my $out, '>', $file or return;
+    open my $out, '>', $file ## no critic (BriefOpen)
+        or croak "Open $file: $OS_ERROR";
     if ($as_hash) {
         for (sort keys %{$entries}) {
-            print {$out} $entries->{$_}->dump();
+            print {$out} $entries->{$_}->dump()
+                or croak "Print $file: $OS_ERROR";
         }
     }
     else {
         for (@{$entries}) {
-            print {$out} $_->dump();
+            print {$out} $_->dump()
+                or croak "Print $file: $OS_ERROR";
         }
     }
-    close $out;
+    close $out
+        or croak "Close $file $OS_ERROR";
+
+    return $self;
 }
 
 sub load_file_asarray {
@@ -359,13 +411,15 @@ sub load_file_asarray {
     my $eol  = shift || "\n";
 
     if (ref $file) {
-        $self->_load_file($file, $file, $eol, 0);
+        return $self->_load_file($file, $file, $eol, 0);
     }
-    else {
-        open my $in, '<', $file or return $!;
-        $self->_load_file($file, $in, $eol, 0);
-        close $in;
-    }
+    open my $in, '<', $file
+        or croak "Open $file: $OS_ERROR";
+    my $array_ref = $self->_load_file($file, $in, $eol, 0);
+    close $in
+        or croak "Close $file: $OS_ERROR";
+
+    return $array_ref;
 }
 
 sub load_file_ashash {
@@ -374,13 +428,15 @@ sub load_file_ashash {
     my $eol  = shift || "\n";
 
     if (ref $file) {
-        $self->_load_file($file, $file, $eol, 1);
+        return $self->_load_file($file, $file, $eol, 1);
     }
-    else {
-        open my $in, '<', $file or return $!;
-        $self->_load_file($file, $in, $eol, 1);
-        close $in;
-    }
+    open my $in, '<', $file
+        or croak "Open $file: $OS_ERROR";
+    my $hash_ref = $self->_load_file($file, $in, $eol, 1);
+    close $in
+        or croak "Close $file: $OS_ERROR";
+
+    return $hash_ref;
 }
 
 sub _load_file {
@@ -417,7 +473,7 @@ sub _load_file {
            : \@entries;
 }
 
-sub load_entry {
+sub load_entry { ## no critic (ExcessComplexity)
     my $self            = shift;
     my $file_name       = shift;
     my $file_handle     = shift;
@@ -434,7 +490,7 @@ sub load_entry {
         $current_line_number = ${$line_number_ref};
         $current_pos         = tell $file_handle;
         defined $current_pos
-            or croak "Can not tell file pointer of file $file_name: $!";
+            or croak "Can not tell file pointer of file $file_name: $OS_ERROR";
     };
     $safe_current_position->();
 
@@ -448,7 +504,7 @@ sub load_entry {
             # roll back
             ${$line_number_ref} = $current_line_number;
             seek $file_handle, $current_pos, 0
-                or croak "Can not seek file pointer of file $file_name: $!";
+                or croak "Can not seek file pointer of file $file_name: $OS_ERROR";
             return 1; # this is a new entry
         }
         $last_line_of_section{ $current_section_key } = ${$line_number_ref};
@@ -462,7 +518,7 @@ sub load_entry {
     while (my $line = <$file_handle>) {
         $line =~ s{\Q$eol\E \z}{}xms;
         my $line_number = ++${$line_number_ref};
-        if ( $line =~ m{\A \s* \z}xms ) {
+        if ( $line =~ m{\A \s* \z}xms ) { ## no critic (CascadingIfElse)
             # Empty line. End of an entry.
             last LINE if $po;
         }
@@ -513,7 +569,9 @@ sub load_entry {
             $po ||= $class->new(eol => $eol, -loaded_line_number => $line_number);
             $buffer{$2} = $self->dequote($3, $eol);
             $current_buffer = \$buffer{$2};
-            $po->obsolete(1) if $1;
+            if ($1) {
+                $po->obsolete(1);
+            }
         }
         elsif ($line =~  m{\A (?: \# ~ \s+ )? msgstr \[ (\d+) \] \s+ (.*)}xms ) {
             # translated string
@@ -533,12 +591,14 @@ sub load_entry {
     }
     if ($po) {
         for my $key (qw(msgctxt msgid msgid_plural msgstr msgstr_n)) {
-            $po->$key( $buffer{$key} ) if defined $buffer{$key};
+            if ( defined $buffer{$key} ) {
+                $po->$key( $buffer{$key} );
+            }
         }
         return $po;
     }
 
-    return;
+    return; # no entry found
 }
 
 sub _hash_key_ok {
@@ -550,7 +610,8 @@ sub _hash_key_ok {
         # don't overwrite non-obsolete entries with obsolete ones
         return if $self->obsolete() && ! $entries->{$key}->obsolete();
         # don't overwrite translated entries with untranslated ones
-        return if $self->msgstr() !~ /\w/ && $entries->{$key}->msgstr() =~ /\w/;
+        return if $self->msgstr() !~ m{\w}xms
+                  && $entries->{$key}->msgstr() =~ m{\w}xms;
     }
 
     return 1;
@@ -564,21 +625,19 @@ __END__
 
 DBD::PO::Locale::PO - Perl module for manipulating .po entries from GNU gettext
 
-The module L<Locale::PO>, version 0.21 was copied and modified
-for module DBD::PO::Text::PO.
-The module DBD::PO based on module DBD::PO::Text::PO.
+$Id: PO.pm 253 2008-10-21 07:24:44Z steffenw $
 
-Read nearly the original POD after this sentence.
+$HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/Locale/PO.pm $
 
-=head1 original NAME
+=head1 VERSION
 
-Locale::PO - Perl module for manipulating .po entries from GNU gettext
+0.21.01
 
 =head1 SYNOPSIS
 
-    use Locale::PO;
+    require DBD::PO::Locale::PO;
 
-    $po = Locale::PO->new([eol => $eol, [-option => value, ...]])
+    $po = DBD::PO::Locale::PO->new([eol => $eol, [-option => value, ...]])
     [$string =] $po->msgid([new string]);
     [$string =] $po->msgstr([new string]);
     [$string =] $po->comment([new string]);
@@ -591,33 +650,33 @@ Locale::PO - Perl module for manipulating .po entries from GNU gettext
 
     $quoted_string = $po->quote($string);
     $string = $po->dequote($quoted_string);
-    $string = Locale::PO->dequote($quoted_string, $eol);
+    $string = DBD::PO::Locale::PO->dequote($quoted_string, $eol);
 
-    $aref = Locale::PO->load_file_asarray(<filename>);
-    $href = Locale::PO->load_file_ashash(<filename>);
-    Locale::PO->save_file_fromarray(<filename>, $aref);
-    Locale::PO->save_file_fromhash(<filename>, $href);
+    $aref = DBD::PO::Locale::PO->load_file_asarray(<filename>);
+    $href = DBD::PO::Locale::PO->load_file_ashash(<filename>);
+    DBD::PO::Locale::PO->save_file_fromarray(<filename>, $aref);
+    DBD::PO::Locale::PO->save_file_fromhash(<filename>, $href);
 
 =head1 DESCRIPTION
 
 This module simplifies management of GNU gettext .po files and is an
 alternative to using emacs po-mode. It provides an object-oriented
-interface in which each entry in a .po file is a Locale::PO object.
+interface in which each entry in a .po file is a DBD::PO::Locale::PO object.
 
-=head1 METHODS
+=head1 SUBROUTINES/METHODS
 
 =over 4
 
-=item new
+=item method new
 
-    my $po = Locale::PO->new();
-    my $po = Locale::PO->new(%options);
+    my $po = DBD::PO::Locale::PO->new();
+    my $po = DBD::PO::Locale::PO->new(%options);
 
 Specify an eol or accept the default "\n".
 
     eol => "\r\n"
 
-Create a new Locale::PO object to represent a po entry.
+Create a new DBD::PO::Locale::PO object to represent a po entry.
 You can optionally set the attributes of the entry by passing
 a list/hash of the form:
 
@@ -629,7 +688,7 @@ fuzzy, c-format and php-format. See accessor methods below.
 To generate a po file header, add an entry with an empty
 msgid, like this:
 
-    $po = Locale::PO->new(
+    $po = DBD::PO::Locale::PO->new(
         -msgid  => q{},
         -msgstr =>
             "Project-Id-Version: PACKAGE VERSION\n"
@@ -641,29 +700,29 @@ msgid, like this:
             . "Content-Transfer-Encoding: ENCODING\n",
     );
 
-=item eol
+=item method eol
 
 Set or get the eol string from the object.
 
-=item msgid
+=item method msgid
 
 Set or get the untranslated string from the object.
 
 This method expects the new string in unquoted form but returns the current string in quoted form.
 
-=item msgid_plural
+=item method msgid_plural
 
 Set or get the untranslated plural string from the object.
 
 This method expects the new string in unquoted form but returns the current string in quoted form.
 
-=item msgstr
+=item method msgstr
 
 Set or get the translated string from the object.
 
 This method expects the new string in unquoted form but returns the current string in quoted form.
 
-=item msgstr_n
+=item method msgstr_n
 
 Get or set the translations if there are purals involved. Takes and
 returns a hashref where the keys are the 'N' case and the values are
@@ -678,20 +737,20 @@ the strings. eg:
 
 This method expects the new strings in unquoted form but returns the current strings in quoted form.
 
-=item msgctxt
+=item method msgctxt
 
 Set or get the translation context string from the object.
 
 This method expects the new string in unquoted form but returns the current string in quoted form.
 
-=item obsolete
+=item method obsolete
 
 Returns 1 if the entry is obsolete.
 Obsolete entries have their msgid, msgid_plural, msgstr, msgstr_n and msgctxt lines commented out with "#~"
 
 When using load_file_ashash, non-obsolete entries will always replace obsolete entries with the same msgid.
 
-=item comment
+=item method comment
 
 Set or get translator comments from the object.
 
@@ -700,7 +759,7 @@ the value is a string that contains the comment lines delimited with
 "\n".  The string includes neither the S<"# "> at the beginning of
 each comment line nor the newline at the end of the last comment line.
 
-=item automatic
+=item method automatic
 
 Set or get automatic comments from the object (inserted by
 emacs po-mode or xgettext).
@@ -710,31 +769,31 @@ the value is a string that contains the comment lines delimited with
 "\n".  The string includes neither the S<"#. "> at the beginning of
 each comment line nor the newline at the end of the last comment line.
 
-=item reference
+=item method reference
 
 Set or get reference marking comments from the object (inserted
 by emacs po-mode or gettext).
 
-=item fuzzy
+=item method fuzzy
 
 Set or get the fuzzy flag on the object ("check this translation").
 When setting, use 1 to turn on fuzzy, and 0 to turn it off.
 
-=item c_format
+=item method c_format
 
 Set or get the c-format or no-c-format flag on the object.
 
 This can take 3 values:
 1 implies c-format, 0 implies no-c-format, and undefined implies neither.
 
-=item php_format
+=item method php_format
 
 Set or get the php-format or no-php-format flag on the object.
 
 This can take 3 values:
 1 implies php-format, 0 implies no-php-format, and undefined implies neither.
 
-=item has_flag
+=item method has_flag
 
     if ($po->has_flag('perl-format')) {
         ...
@@ -742,74 +801,79 @@ This can take 3 values:
 
 Returns true if the flag exists in the entry's #~ comment
 
-=item add_flag
+=item method add_flag
 
     $po->add_flag('perl-format');
 
 Adds the flag to the #~ comment
 
-=item remove_flag
+=item method remove_flag
 
     $po->remove_flag('perl-format');
 
 Removes the flag from the #~ comment
 
-=item loaded_line_number
+=item method loaded_line_number
 
 When using one of the load_file_as* methods,
 this will return the line number that the entry started at in the file.
 
-=item dump
+=item method dump
 
 Returns the entry as a string, suitable for output to a po file.
 
-=item quote
+=item method quote
 
 Applies po quotation rules to a string, and returns the quoted
 string. The quoted string will have all existing double-quote
 characters escaped by backslashes, and will be enclosed in double
 quotes.
 
-=item dequote
+=item method dequote
 
 Returns a quoted po string to its natural form.
 
-=item load_file_asarray
+=item method load_file_asarray
 
 Given the filename of a po-file, reads the file and returns a
-reference to a list of Locale::PO objects corresponding to the contents of
+reference to a list of DBD::PO::Locale::PO objects corresponding to the contents of
 the file, in the same order.
 
-=item load_file_ashash
+=item method load_file_ashash
 
 Given the filename of a po-file, reads the file and returns a
-reference to a hash of Locale::PO objects corresponding to the contents of
+reference to a hash of DBD::PO::Locale::PO objects corresponding to the contents of
 the file. The hash keys are the untranslated strings, so this is a cheap
 way to remove duplicates. The method will prefer to keep entries that
 have been translated.
 
-=item save_file_fromarray
+=item method save_file_fromarray
 
-Given a filename and a reference to a list of Locale::PO objects,
+Given a filename and a reference to a list of DBD::PO::Locale::PO objects,
 saves those objects to the file, creating a po-file.
 
-=item save_file_fromhash
+=item method save_file_fromhash
 
-Given a filename and a reference to a hash of Locale::PO objects,
+Given a filename and a reference to a hash of DBD::PO::Locale::PO objects,
 saves those objects to the file, creating a po-file. The entries
 are sorted alphabetically by untranslated string.
 
-=item load_entry
+=item method load_entry
 
 Method was added to read entry by entry.
 
+    use Carp qw(croak);
+    use English qw(-no_match_vars $OS_ERROR);
     use Socket qw($CRLF);
-    open my $file_handle, '<', $file_name or die $!;
+    use DBD::PO::Locale::PO;
+
+    open my $file_handle, '<', $file_name
+        or croak $OS_ERROR;
     $eol = $CRLF;
     my $line_number = 0;
     while (
-        my $po = Locale::PO->load_entry(
-            'file name or something like for a possible error message',
+        my $po = DBD::PO::Locale::PO->load_entry(
+            $file_name,
             $file_handle,
             \$line_number,
             $eol, # optional, default "\n"
@@ -820,6 +884,42 @@ Method was added to read entry by entry.
 
 =back
 
+=head1 DIAGNOSTICS
+
+none
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+none
+
+=head1 DEPENDENCIES
+
+Carp
+
+English
+
+=head1 INCOMPATIBILITIES
+
+not known
+
+=head1 BUGS AND LIMITATIONS
+
+If you load_file_as* then save_file_from*, the output file may have slight
+cosmetic differences from the input file (an extra blank line here or there).
+(And the quoting of binary values can be changed, but all this is not a Bug.)
+
+msgid, msgid_plural, msgstr, msgstr_n and msgctxt
+expect a non-quoted string as input, but return quoted strings.
+The maintainer of Locale::PO was hesitant to change this in fear of breaking the modules/scripts
+of people already using Locale::PO. (Fixed in DBD::PO::Locale::PO)
+
+Locale::PO requires blank lines between entries, but Uniforum style PO
+files don't have any. (Fixed)
+
+=head1 SEE ALSO
+
+L<Locale::Maketext::Lexicon> xgettext.pl
+
 =head1 AUTHOR
 
 Some Bugfixes in DBD::PO::Locale::PO: Steffen Winkler, steffenw at cpan.org
@@ -828,24 +928,15 @@ Maintainer of Locale::PO: Ken Prows, perl at xev.net
 
 Original version of Locale::PO by: Alan Schwartz, alansz at pennmush.org
 
-=head1 BUGS
+=head1 LICENSE AND COPYRIGHT
 
-If you load_file_as* then save_file_from*, the output file may have slight
-cosmetic differences from the input file (an extra blank line here or there).
-(And the quoting of binary values can be changed, but all this is not a Bug.)
+Copyright (c) 2008,
+Steffen Winkler
+C<< <steffenw at cpan.org> >>.
+All rights reserved.
 
-msgid, msgid_plural, msgstr, msgstr_n and msgctxt
-expect a non-quoted string as input, but return quoted strings.
-I'm hesitant to change this in fear of breaking the modules/scripts
-of people already using Locale::PO. (Fixed)
-
-Locale::PO requires blank lines between entries, but Uniforum style PO
-files don't have any. (Fixed)
-
-Please submit all bug requests using CPAN's ticketing system.
-
-=head1 SEE ALSO
-
-xgettext(1).
+This module is free software;
+you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut

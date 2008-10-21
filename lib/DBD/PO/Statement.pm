@@ -3,14 +3,17 @@ package DBD::PO::Statement;
 use strict;
 use warnings;
 
+our $VERSION = '1.00';
+
 use DBD::File;
 use parent qw(-norequire DBD::File::Statement);
 
 use Carp qw(croak);
+use English qw(-no_match_vars $OS_ERROR);
 use DBD::PO::Text::PO qw($EOL_DEFAULT $SEPARATOR_DEFAULT @COL_NAMES);
 
-sub open_table {
-    my ($self, $data, $table, $createMode, $lockMode) = @_;
+sub open_table { ## no critic (ExcessComplexity)
+    my ($self, $data, $table, $create_mode, $lock_mode) = @_;
 
     my $dbh = $data->{Database};
     my $tables = $dbh->{po_tables};
@@ -20,7 +23,8 @@ sub open_table {
     my $meta = $tables->{$table} || {};
     my $po = $meta->{po} || $dbh->{po_po};
     if (! $po) {
-        @{ $dbh->FETCH('f_valid_attrs') }{qw(po_eol po_separator po_charset)} = (1) x 3;
+        @{ $dbh->FETCH('f_valid_attrs') }{qw(po_eol po_separator po_charset)}
+            = (1) x 3; ## no critic (MagicNumbers)
         my $class = $meta->{class}
                     || $dbh->{po_class}
                     || 'DBD::PO::Text::PO';
@@ -46,7 +50,7 @@ sub open_table {
     }
     my $file = $meta->{file}
                || $table;
-    my $tbl = $self->SUPER::open_table($data, $file, $createMode, $lockMode);
+    my $tbl = $self->SUPER::open_table($data, $file, $create_mode, $lock_mode);
     if ($tbl) {
         {
             my $po_charset = exists $meta->{charset}
@@ -56,7 +60,7 @@ sub open_table {
                                : undef;
             if ($po_charset) {
                 $tbl->{fh}->binmode("encoding($po_charset)")
-                    or croak "binmode $!";
+                    or croak "binmode $OS_ERROR";
             }
         }
         $tbl->{po_po} = $po;
@@ -67,7 +71,7 @@ sub open_table {
            my $t = [];
            for (@{$types}) {
                if ($_) {
-                   $_ = $DBD::PO::PO_TYPES[$_ + 6]
+                   $_ = $DBD::PO::PO_TYPES[$_ + 6] ## no critic (MagicNumbers)
                         || $DBD::PO::PV;
                }
                else {
@@ -78,46 +82,11 @@ sub open_table {
            $tbl->{types} = $t;
         }
         if (
-           ! $createMode
+           ! $create_mode
            && ! $self->{ignore_missing_table}
            && $self->command() ne 'DROP'
         ) {
-            my ($array, $skipRows);
-            if (exists $meta->{skip_rows}) {
-                $skipRows = $meta->{skip_rows};
-            }
-            else {
-                $skipRows = exists $meta->{col_names} ? 0 : 1;
-            }
-            if ($skipRows--) {
-#                if (! ($array = $tbl->fetch_row($data))) {
-                if (! ($array = \@COL_NAMES)) {
-                    croak 'Missing header';
-                }
-                $tbl->{col_names} = $array;
-                while ($skipRows--) {
-                    $tbl->fetch_row($data);
-                }
-            }
-            $tbl->{first_row_pos} = $tbl->{fh}->tell();
-            if (exists $meta->{col_names}) {
-                $array = $tbl->{col_names} = $meta->{col_names};
-            }
-            elsif (! $tbl->{col_names} || ! @{$tbl->{col_names}}) {
-                # No column names given; fetch first row and create default
-                # names.
-                my $cached_row = $tbl->{cached_row}
-                               = $tbl->fetch_row($data);
-                $array = $tbl->{col_names};
-                for (my $i = 0;  $i < @{$cached_row};  $i++) {
-                    push @{$array}, "col$i";
-                }
-            }
-            my $index = 0;
-            my $columns = $tbl->{col_nums};
-            for my $col (@{$array}) {
-                $columns->{$col} = $index++;
-            }
+            $tbl->{col_names} = \@COL_NAMES;
         }
     }
 
@@ -132,12 +101,73 @@ sub command {
 
 __END__
 
-=pod
+=head1 NAME
+
+DBD::PO::Statement - statement class for DBD::File
+
+$Id: Statement.pm 253 2008-10-21 07:24:44Z steffenw $
+
+$HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/Statement.pm $
+
+=head1 VERSION
+
+1.00
+
+=head1 SYNOPSIS
+
+do not use
+
+=head1 DESCRIPTION
+
+statement class for DBD::File
 
 =head1 SUBROUTINES/METHODS
 
 =head2 method open_table
 
 =head2 method command
+
+=head1 DIAGNOSTICS
+
+none
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+none
+
+=head1 DEPENDENCIES
+
+parent
+
+Carp
+
+English
+
+L<DBD::File>
+
+L<DBD::PO::Text::PO>
+
+=head1 INCOMPATIBILITIES
+
+not known
+
+=head1 BUGS AND LIMITATIONS
+
+not known
+
+=head1 AUTHOR
+
+Steffen Winkler
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (c) 2008,
+Steffen Winkler
+C<< <steffenw at cpan.org> >>.
+All rights reserved.
+
+This module is free software;
+you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut

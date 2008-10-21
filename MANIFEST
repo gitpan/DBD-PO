@@ -7,7 +7,6 @@ lib/DBD/PO.pm
 lib/DBD/PO/db.pm
 lib/DBD/PO/dr.pm
 lib/DBD/PO/Locale/PO.pm
-lib/DBD/PO/Locale/PO.pm.original
 lib/DBD/PO/st.pm
 lib/DBD/PO/Statement.pm
 lib/DBD/PO/Table.pm

@@ -3,51 +3,50 @@ package DBD::PO::Table;
 use strict;
 use warnings;
 
+our $VERSION = '1.00';
+
 use DBD::File;
 use parent qw(-norequire DBD::File::Table);
 
 use Carp qw(croak);
+use English qw(-no_match_vars $INPUT_RECORD_SEPARATOR);
 
-sub fetch_row ($$) {
+sub fetch_row {
     my ($self, $data) = @_;
 
+    my $file_handle = $self->{fh};
+    my $file_name   = $self->{file};
     my $fields;
     if (exists $self->{cached_row}) {
         $fields = delete $self->{cached_row};
     }
     else {
-        $! = 0;
         my $po = $self->{po_po};
-        local $/ = $po->{'eol'};
-        $fields = $po->getline($self->{'fh'});
-        if (! $fields) {
-           croak "Error while reading file $self->{file}: $!" if $!;
-           return;
-        }
+        local $INPUT_RECORD_SEPARATOR = $po->{eol};
+        $fields = $po->read_entry($file_name, $file_handle);
     }
 
     return $self->{row} = @{$fields} ? $fields : ();
 }
 
-sub push_row ($$$) {
+sub push_row {
     my ($self, $data, $fields) = @_;
 
-    my $po = $self->{po_po};
-    my $fh = $self->{fh};
-    #
+    my $po          = $self->{po_po};
+    my $file_handle = $self->{fh};
+    my $file_name   = $self->{file};
+
     #  Remove undef from the right end of the fields, so that at least
     #  in these cases undef is returned from FetchRow
-    #
-    while (@{$fields} && ! defined $fields->[$#{$fields}]) {
+    while (@{$fields} && ! defined $fields->[-1]) {
         pop @{$fields};
     }
-    $po->print($fh, $fields)
-        or croak "Error while writing file $self->{file}: $!";
+    $po->write_entry($file_name, $file_handle, $fields);
 
     return 1;
 }
 
-sub push_names ($$$) {
+sub push_names {
     my ($self, $data, $fields) = @_;
 
     return 1;
@@ -57,6 +56,26 @@ sub push_names ($$$) {
 
 __END__
 
+=head1 NAME
+
+DBD::PO::Table - table class for DBD::File
+
+$Id: Table.pm 253 2008-10-21 07:24:44Z steffenw $
+
+$HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/Table.pm $
+
+=head1 VERSION
+
+1.00
+
+=head1 SYNOPSIS
+
+do not use
+
+=head1 DESCRIPTION
+
+table class for DBD::File
+
 =head1 SUBROUTINES/METHODS
 
 =head2 method fetch_row
@@ -64,5 +83,46 @@ __END__
 =head2 method push_row
 
 =head2 method push_names
+
+=head1 DIAGNOSTICS
+
+none
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+none
+
+=head1 DEPENDENCIES
+
+parent
+
+Carp
+
+English
+
+L<DBD::File>
+
+=head1 INCOMPATIBILITIES
+
+not known
+
+=head1 BUGS AND LIMITATIONS
+
+not known
+
+=head1 AUTHOR
+
+Steffen Winkler
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (c) 2008,
+Steffen Winkler
+C<< <steffenw at cpan.org> >>.
+All rights reserved.
+
+This module is free software;
+you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut

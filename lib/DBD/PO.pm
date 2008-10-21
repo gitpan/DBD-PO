@@ -3,6 +3,8 @@ package DBD::PO;
 use strict;
 use warnings;
 
+our $VERSION = '1.00';
+
 use parent qw(DBD::File);
 
 use DBD::PO::dr;
@@ -10,13 +12,6 @@ use DBD::PO::db;
 use DBD::PO::Statement;
 use DBD::PO::Table;
 use DBD::PO::st;
-
-our $VERSION = '0.10';
-
-our $drh = ();       # holds driver handle once initialised
-our $err = 0;        # holds error code   for DBI::err
-our $errstr = q{};   # holds error string for DBI::errstr
-our $sqlstate = q{}; # holds error state  for DBI::state
 
 1;
 
@@ -26,13 +21,13 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 238 2008-09-26 07:55:36Z steffenw $
+$Id: PO.pm 251 2008-10-03 20:12:28Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
 =head1 VERSION
 
-0.10
+1.00
 
 =head1 SYNOPSIS
 
@@ -459,11 +454,6 @@ For conditional execution use DROP TABLE IF EXISTS statement.
 
     $dbh->disconnect();
 
-=head1 EXAMPLE
-
-Inside of this Distribution is a directory named example.
-Run this *.pl files.
-
 =head1 DESCRIPTION
 
 The DBD::PO module is yet another driver for the DBI
@@ -500,9 +490,14 @@ DBD::File.
                |
          table_file.po
 
+=head1 EXAMPLE
+
+Inside of this Distribution is a directory named example.
+Run this *.pl files.
+
 =head1 SUBROUTINES/METHODS
 
-nothing in this module
+none here
 
 =head1 DIAGNOSTICS
 

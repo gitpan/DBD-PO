@@ -3,6 +3,8 @@ package Test::DBD::PO::Defaults;
 use strict;
 use warnings;
 
+our $VERSION = '1.00';
+
 use parent qw(Exporter);
 our @EXPORT_OK = qw(
     $TRACE
@@ -35,8 +37,8 @@ our @EXPORT_OK = qw(
     run_example
 );
 
-#use Carp qw(confess); $SIG{__DIE__} = \&confess;
 use Carp qw(croak);
+use English qw(-no_match_vars $OS_ERROR $EVAL_ERROR $INPUT_RECORD_SEPARATOR);
 use Cwd;
 use Socket qw($LF $CRLF);
 
@@ -79,23 +81,43 @@ sub trace_file_name {
 sub run_example {
     my $file_name = shift;
 
-    open my $file, '<', "$PATH/example/$file_name" or die $!;
-    local $/ = ();
+    open my $file, '<', "$PATH/example/$file_name"
+        or croak $OS_ERROR;
+    local $INPUT_RECORD_SEPARATOR = ();
     my ($content) = <$file> =~ m{\A (.*) \z}xms; # untaint
-    eval $content;
+    () = close $file;
+    () = eval $content; ## no critic (ProhibitStringyEval)
 
-    return $@;
+    return $EVAL_ERROR;
 }
+
+1;
+
+__END__
 
 =head1 NAME
 
 Test::DBD::PO::Defaults - Some defaults to run tests for module DBD::PO
 
-$Id: PO.pm 80 2008-07-26 17:25:03Z steffenw $
+$Id: Defaults.pm 253 2008-10-21 07:24:44Z steffenw $
 
-$HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
+$HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/Test/DBD/PO/Defaults.pm $
 
-=head1 SUBROUTINES/METHOD
+=head1 VERSION
+
+1.00
+
+=head1 SYNOPSIS
+
+    use Test::DBD::PO::Defaults qw(
+        # see @EXPORT_OK in source
+    );
+
+=head1 DESCRIPTION
+
+This module is only useful for the test of DBD::PO module.
+
+=head1 SUBROUTINES/METHODS
 
 =head2 sub trace_file_name
 
@@ -104,5 +126,46 @@ $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD
 =head2 sub run_example
 
     my $error = run_example('example_file_name_without_path');
+
+=head1 DIAGNOSTICS
+
+none
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+none
+
+=head1 DEPENDENCIES
+
+Carp
+
+English
+
+Cwd
+
+Socket
+
+=head1 INCOMPATIBILITIES
+
+not known
+
+=head1 BUGS AND LIMITATIONS
+
+not known
+
+=head1 AUTHOR
+
+Steffen Winkler
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (c) 2008,
+Steffen Winkler
+C<< <steffenw at cpan.org> >>.
+All rights reserved.
+
+This module is free software;
+you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut

@@ -3,13 +3,12 @@
 use strict;
 use warnings;
 
+use Carp qw(croak);
+use English qw(-no_match_vars $OS_ERROR $INPUT_RECORD_SEPARATOR);
 use Test::DBD::PO::Defaults qw($FILE_TEXT_PO $DROP_TABLE);
-use Test::More tests => 7;
-eval 'use Test::Differences qw(eq_or_diff)';
-if ($@) {
-    *eq_or_diff = \&is;
-    diag("Module Test::Differences not installed; $@");
-}
+use Test::More tests => 7 + 1;
+use Test::NoWarnings;
+use Test::Differences;
 
 BEGIN {
     require_ok('IO::File');
@@ -67,11 +66,11 @@ my $po_string = quote($test_string, "\n");
 
 # write po file
 {
-    my $file = IO::File->new();
-    isa_ok($file, 'IO::File');
+    my $file_handle = IO::File->new();
+    isa_ok($file_handle, 'IO::File');
 
     ok(
-        $file->open(
+        $file_handle->open(
             $FILE_TEXT_PO,
             '> :encoding(utf-8)',
         ),
@@ -85,17 +84,19 @@ my $po_string = quote($test_string, "\n");
     isa_ok($text_po, 'DBD::PO::Text::PO', 'new');
 
     # header
-    $text_po->print(
-        $file,
+    $text_po->write_entry(
+        $FILE_TEXT_PO,
+        $file_handle,
         [
-            '',
+            q{},
             'Content-Type: text/plain; charset=utf-8',
         ],
     );
 
     # line
-    $text_po->print(
-        $file,
+    $text_po->write_entry(
+        $FILE_TEXT_PO,
+        $file_handle,
         [
             'id',
             $test_string,
@@ -113,12 +114,12 @@ msgid "id"
 msgstr $po_string
 
 EOT
-    local $/ = ();
+    local $INPUT_RECORD_SEPARATOR = ();
     open my $file1,
          '< :encoding(utf-8)',
-         $FILE_TEXT_PO or die $!;
+         $FILE_TEXT_PO or croak $OS_ERROR;
     my $content1 = <$file1>;
-    open my $file2, '< :encoding(utf-8)', \($po) or die $!;
+    open my $file2, '< :encoding(utf-8)', \($po) or croak $OS_ERROR;
     my $content2 = <$file2>;
     eq_or_diff($content1, $content2, 'check po file');
 }

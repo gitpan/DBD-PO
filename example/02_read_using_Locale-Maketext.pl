@@ -31,9 +31,10 @@
 use strict;
 use warnings;
 
+use Carp qw(croak);
 use Data::Dumper ();
 
-my $lh = Example::L10N->get_handle('en') or die 'What language';
+my $lh = Example::L10N->get_handle('en') or croak 'What language';
 
 my @output = map {
     ref $_

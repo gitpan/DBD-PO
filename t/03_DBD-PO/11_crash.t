@@ -8,7 +8,9 @@ use Test::DBD::PO::Defaults qw(
     trace_file_name
     $TABLE_11 $FILE_11
 );
-use Test::More tests => 15;
+use Test::More tests => 15 + 1;
+use Test::NoWarnings;
+use Test::Exception;
 
 BEGIN {
     require_ok('DBI');
@@ -46,46 +48,43 @@ EO_SQL
 }
 
 # write a line and not the header at first
-eval {
-    $dbh->do(<<"EO_SQL", undef, 'id');
-        INSERT INTO $TABLE_11 (
-            msgid
-        ) VALUES (?)
+throws_ok
+    {
+        $dbh->do(<<"EO_SQL", undef, 'id');
+            INSERT INTO $TABLE_11 (
+                msgid
+            ) VALUES (?)
 EO_SQL
-};
-like(
-    $@,
+    }
     qr{\QA header has no msgid}xms,
     'write a line and not the header at first',
-);
+;
 
 # write an empty header
-eval {
-    $dbh->do(<<"EO_SQL", undef, undef);
-        INSERT INTO $TABLE_11 (
-            msgstr
-        ) VALUES (?)
+throws_ok
+    {
+        $dbh->do(<<"EO_SQL", undef, undef);
+            INSERT INTO $TABLE_11 (
+                msgstr
+            ) VALUES (?)
 EO_SQL
-};
-like(
-    $@,
+    }
     qr{\QA header has to have a msgstr}xms,
     'write an empty header',
-);
+;
 
 # write a false header
-eval {
-    $dbh->do(<<"EO_SQL", undef, 'false');
-        INSERT INTO $TABLE_11 (
-            msgstr
-        ) VALUES (?)
+throws_ok
+    {
+        $dbh->do(<<"EO_SQL", undef, 'false');
+            INSERT INTO $TABLE_11 (
+                msgstr
+            ) VALUES (?)
 EO_SQL
-};
-like(
-    $@,
+    }
     qr{\QThis can not be a header}xms,
     'write a false header',
-);
+;
 
 # write a true header
 {
@@ -110,60 +109,56 @@ EO_SQL
 }
 
 # a line looks like a header
-eval {
-    $dbh->do(<<"EO_SQL", undef, 'translation');
-        INSERT INTO $TABLE_11 (
-            msgstr
-        ) VALUES (?)
+throws_ok
+    {
+        $dbh->do(<<"EO_SQL", undef, 'translation');
+            INSERT INTO $TABLE_11 (
+                msgstr
+            ) VALUES (?)
 EO_SQL
-};
-like(
-    $@,
+    }
     qr{\Q A line has to have a msgid}xms,
     'a line looks like a header',
-);
+;
 
 # change a header to an empty header
-eval {
-    $dbh->do(<<"EO_SQL", undef, q{}, q{});
-        UPDATE $TABLE_11
-        SET    msgstr=?
-        WHERE  msgid=?
+throws_ok
+    {
+        $dbh->do(<<"EO_SQL", undef, q{}, q{});
+            UPDATE $TABLE_11
+            SET    msgstr=?
+            WHERE  msgid=?
 EO_SQL
-};
-like(
-    $@,
+    }
     qr{\QA header has to have a msgstr}xms,
     'change a header to an empty header',
-);
+;
 
 # change a header to a false header
-eval {
-    $dbh->do(<<"EO_SQL", undef, 'false', q{});
-        UPDATE $TABLE_11
-        SET    msgstr=?
-        WHERE  msgid=?
+throws_ok
+    {
+        $dbh->do(<<"EO_SQL", undef, 'false', q{});
+            UPDATE $TABLE_11
+            SET    msgstr=?
+            WHERE  msgid=?
 EO_SQL
-};
-like(
-    $@,
+    }
     qr{\QThis can not be a header}xms,
     'change a header to a false header',
-);
+;
 
 # change a line to a false line
-eval {
-    $dbh->do(<<"EO_SQL", undef, q{}, 'id');
-        UPDATE $TABLE_11
-        SET    msgid=?
-        WHERE  msgid=?
+throws_ok
+    {
+        $dbh->do(<<"EO_SQL", undef, q{}, 'id');
+            UPDATE $TABLE_11
+            SET    msgid=?
+            WHERE  msgid=?
 EO_SQL
-};
-like(
-    $@,
+    }
     qr{\QA line has to have a msgid}xms,
     'change a line to a false line',
-);
+;
 
 # drop table
 SKIP: {

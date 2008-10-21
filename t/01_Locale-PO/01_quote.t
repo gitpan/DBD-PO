@@ -3,13 +3,12 @@
 use strict;
 use warnings;
 
+use Carp qw(croak);
+use English qw(-no_match_vars $OS_ERROR $INPUT_RECORD_SEPARATOR);
 use Test::DBD::PO::Defaults qw($FILE_LOCALE_PO_01 $DROP_TABLE);
-use Test::More tests => 13;
-eval 'use Test::Differences qw(eq_or_diff)';
-if ($@) {
-    *eq_or_diff = \&is;
-    diag("Module Test::Differences not installed; $@");
-}
+use Test::More tests => 13 + 1;
+use Test::NoWarnings;
+use Test::Differences;
 
 BEGIN {
     require_ok('IO::File');
@@ -97,12 +96,12 @@ msgid "test"
 msgstr $po_string
 
 EOT
-    local $/ = ();
+    local $INPUT_RECORD_SEPARATOR = ();
     open my $file1,
          '< :encoding(utf-8)',
-         $FILE_LOCALE_PO_01 or die $!;
+         $FILE_LOCALE_PO_01 or croak $OS_ERROR;
     my $content1 = <$file1>;
-    open my $file2, '< :encoding(utf-8)', \($po) or die $!;
+    open my $file2, '< :encoding(utf-8)', \($po) or croak $OS_ERROR;
     my $content2 = <$file2>;
     eq_or_diff($content1, $content2, 'check po file');
 }

@@ -3,17 +3,16 @@
 use strict;
 use warnings;
 
+use Carp qw(croak);
+use English qw(-no_match_vars $OS_ERROR $INPUT_RECORD_SEPARATOR);
 use Test::DBD::PO::Defaults qw(
     $TRACE $PATH $DROP_TABLE
     trace_file_name
     $TABLE_13 $FILE_13
 );
-use Test::More tests => 27;
-eval 'use Test::Differences qw(eq_or_diff)';
-if ($@) {
-    *eq_or_diff = \&is;
-    diag('Module Test::Differences not installed');
-}
+use Test::More tests => 27 + 1;
+use Test::NoWarnings;
+use Test::Differences;
 
 BEGIN {
     require_ok('DBI');
@@ -124,18 +123,18 @@ msgid "id_\N{SECTION SIGN}"
 msgstr "str_\N{SECTION SIGN}"
 
 EOT
-    local $/ = ();
+    local $INPUT_RECORD_SEPARATOR = ();
     open
         my $file1,
         "< :encoding($po_charset)",
         $param->{table_file}
-        or die $!;
+        or croak $OS_ERROR;
     my $content1 = <$file1>;
     open
         my $file2,
         "< :encoding(utf-8)",
         \($po)
-        or die $!;
+        or croak $OS_ERROR;
     my $content2 = <$file2>;
     eq_or_diff($content1, $content2, "check po file ($charset)");
 
