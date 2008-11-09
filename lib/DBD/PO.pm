@@ -3,7 +3,9 @@ package DBD::PO;
 use strict;
 use warnings;
 
-our $VERSION = '1.00';
+our $VERSION     = '2.00';
+our $ATTRIBUTION = __PACKAGE__
+                   . ' by Steffen Winkler <steffenw at cpan.org>';
 
 use parent qw(DBD::File);
 
@@ -12,6 +14,13 @@ use DBD::PO::db;
 use DBD::PO::Statement;
 use DBD::PO::Table;
 use DBD::PO::st;
+use DBD::PO::Text::PO;
+
+sub init {
+    my (undef, @params) = @_;
+
+    return DBD::PO::Text::PO->init(@params);
+}
 
 1;
 
@@ -21,13 +30,13 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 251 2008-10-03 20:12:28Z steffenw $
+$Id: PO.pm 290 2008-11-09 13:21:26Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
 =head1 VERSION
 
-1.00
+2.00
 
 =head1 SYNOPSIS
 
@@ -36,6 +45,10 @@ $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD
     use Carp qw(croak);
     use DBI ();
     use Socket qw($LF);
+
+    # The next line is mostly obsolete
+    # and was introduced for performance settings only.
+    require DBD::PO; DBD::PO->init(qw(...));
 
     my $dbh = DBI->connect(
         'DBI:PO:'
@@ -92,39 +105,11 @@ For conditional execution use CREATE TABLE IF EXISTS statement.
 
 Columns:
 
-=over 9
-
-=item * comment
-
-translator comment text concatinated by 'po_separator'
-
-=item * automatic
-
-automatic comment text concatinated by 'po_separator'
-
-=item * reference
-
-where the text to translate is from, concatinated by 'po_separator'
-
-=item * obsolete
-
-the translation is used (0) or not (1)
-
-=item * fuzzy
-
-the translation is finished (0) or not (1)
-
-=item * c_format (c-format, no-c-format)
-
-format flag, not set (0), set (1) or negative set (-1)
-
-=item * php_format (php-format, no-php-format)
-
-format flag, not set (0), set (1) or negative set (-1)
+=over 14
 
 =item * msgid
 
-the text to translate (emty string for header)
+The text to translate (emty string for header).
 
 The 'msgid' can contain Locale::Maketext placeholders.
 They have to be stored in gettext format.
@@ -132,26 +117,112 @@ To change the format, use the database handle function 'maketext_to_gettext'.
 
 =item * msgstr
 
-the translation
+The translation.
 
 The 'msgid' can contain Locale::Maketext placeholder.
 They have to be stored in gettext format.
 To change the format, use the database handle function 'maketext_to_gettext'.
 
+=item * comment
+
+The translator comment text concatinated by 'po_separator'.
+
+=item * automatic
+
+The automatic comment text concatinated by 'po_separator'.
+
+=item * reference
+
+Where the text to translate is from, concatinated by 'po_separator'.
+
+=item * msgctxt
+
+This is the context.
+
+=item * fuzzy
+
+The translation is finished (0) or not (1).
+
+=item * obsolete
+
+The translation is used (0) or not (1).
+
+=item * ..._format (...-format, no-...-format)
+
+There are c-format, php-format and so on, see L<DBD::PO::Locale::PO>.
+
+To use these format flags call
+C<DBD::PO->init(qw(c-format php-format ...);>
+or C<DBD::PO->init(':format');>
+or C<DBD::PO->init(':all');> early.
+
+Flag, not set (0), set (1) or negative set (-1).
+
+=item * msgid_plural
+
+The same like msgid but for plural.
+
+To use these format flags call
+C<DBD::PO->init(':plural');>
+or C<DBD::PO->init(':all');> early.
+
+=item * msgstr_0 .. msgstr_3
+
+Insted of msgstr for plural item 0 .. 3.
+
+To use these format flags call
+C<DBD::PO->init(':plural');>
+or C<DBD::PO->init(':all');> early.
+
+=item * previous_msgctxt
+
+As comment formatted former msgctxt.
+
+To use these format flags call
+C<DBD::PO->init(':previous');>
+or C<DBD::PO->init(':all');> early.
+
+=item * previous_msgid
+
+As comment formatted former msgid.
+
+To use these format flags call
+C<DBD::PO->init(':previous');>
+or C<DBD::PO->init(':all');> early.
+
+=item * previous_msgid_plural
+
+As comment formatted former msgid_plural.
+
+To use these format flags call
+C<DBD::PO->init(':previous');>
+or C<DBD::PO->init(':all');> early.
+
 =back
+
+..._format, msgstr_0 .. msgstr_3 and previous_... are normally switched off.
+See method init.
 
     $dbh->do(<<'EOT');
         CREATE TABLE
             table.po (
-                comment    VARCHAR,
-                automatic  VARCHAR,
-                reference  VARCHAR,
-                obsolete   INTEGER,
-                fuzzy      INTEGER,
-                c_format   INTEGER,
-                php_format INTEGER,
-                msgid      VARCHAR,
-                msgstr     VARCHAR
+                msgid                 VARCHAR,
+                msgstr                VARCHAR,
+                comment               VARCHAR,
+                automatic             VARCHAR,
+                reference             VARCHAR,
+                msgctxt               VARCHAR,
+                fuzzy                 INTEGER,
+                obsolete              INTEGER,
+                ..._format            INTEGER,
+                msgid_plural          VARCHAR,
+                msgstr_0              VARCHAR,
+                msgstr_1              VARCHAR,
+                msgstr_2              VARCHAR,
+                msgstr_3              VARCHAR
+                previous_msgctxt      VARCHAR,
+                previous_msgid        VARCHAR,
+                previous_msgid_plural VARCHAR,
             )
     EOT
 
@@ -171,12 +242,16 @@ Note that the default encoding is nothing, not 'utf-8'.
         'build_header_msgstr',
     );
 
-=head4 full example (but use the named one)
+=head4 full example (Do not use! Use the named one!)
 
     my $header_msgstr = $dbh->func(
         [
             # project
             'Project name',
+            [
+                'Bug Reporter',
+                'report.msgid.bugs.to@example.org',
+            ],
             # ISO 8601 time format like [YYYY]-[MM]-[DD]T[hh]::[mm]:[ss]Z
             'the POT creation date',
             'the PO revision date',
@@ -191,10 +266,10 @@ Note that the default encoding is nothing, not 'utf-8'.
                 'cpan@example.org',
             ],
             # undef to accept the defaut settings
-            undef, # mime version (1.0)
             undef, # arrayref of content type (text/plain) and charset
                    # 'iso-8859-1' or given as po_charset at the connect method
             undef, # content transfer encoding (8bit)
+            undef, # plural forms
             # place here pairs for extra parameters
             [qw(
                 X-Poedit-Language      German
@@ -211,6 +286,8 @@ Note that the default encoding is nothing, not 'utf-8'.
     my $header_msgstr = $dbh->func(
         {
             'Project-Id-Version'        => 'Project name',
+            'Report-Msgid-Bugs-To-Name' => 'Bug Reporter',
+            'Report-Msgid-Bugs-To-Mail' => 'report.msgid.bugs.to@example.org',
             'POT-Creation-Date'         => 'the POT creation date',
             'PO-Revision-Date'          => 'the PO revision date',
             'Last-Translator-Name'      => 'Steffen Winkler',
@@ -219,10 +296,11 @@ Note that the default encoding is nothing, not 'utf-8'.
             'Language-Team-Mail'        => 'cpan@example.org',
             # Do not set the following values.
             # They will be set automaticly.
-            'MIME-Version'              => '1.0',
             'Content-Type'              => 'text/plain',
             charset                     => $po_charset || 'iso-8859-1',
             'Content-Transfer-Encoding' => '8bit',
+            # an English/German example
+            'Plural-Forms:              => 'nplurals=2; plural=n != 1;',
             # place here pairs for extra parameters
             extended                    => [qw(
                 X-Poedit-Language      German
@@ -340,16 +418,14 @@ Scalar to scalar mapping.
 
 Arrayref to arrayref mapping.
 
-    my $array_ref = @{
-        $dbh->func(
-            {table => 'table_name'},
-            [qw(charset Project-Id-Version)],
-            'get_header_msgstr_data',
-        )
-    };
+    my $array_ref = $dbh->func(
+        {table => 'table_name'},
+        [qw(charset Project-Id-Version)],
+        'get_header_msgstr_data',
+    );
     my ($charset, $project_id_version) = @{$array_ref};
 
-=head3 not easy (do not use)
+=head3 not easy (Do not use!)
 
     # read the header msgstr
     $sth = $dbh->prepare(<<'EOT');
@@ -374,7 +450,7 @@ Arrayref to arrayref mapping.
         'get_header_msgstr_data',
     );
 
-=head3 not easy, implicit call of split_header_msgstr (do not use)
+=head3 not easy, implicit call of split_header_msgstr (Do not use!)
 
     # read the header msgstr
     $sth = $dbh->prepare(<<'EOT');
@@ -392,7 +468,7 @@ Arrayref to arrayref mapping.
         'get_header_msgstr_data',
     );
 
-=head3 not easy, implicit SQL call (do not use)
+=head3 not easy, implicit SQL call (Do not use!)
 
     # extract the header data
     my $header_struct = $dbh->func(
@@ -471,14 +547,9 @@ DBD::File.
     |         DBI         |
      ---------------------
                |
-     ---------------------
-    |      DBD::File      |
-    |  (SQL::Statement)   |
-     ---------------------
-               |
-     ---------------------
-    |       DBD::PO       |
-     ---------------------
+     ---------------------     -----------     ---------------
+    |       DBD::PO       |---| DBD::File |---| SQL-Statement |
+     ---------------------     -----------     ---------------
                |
      ---------------------
     |  DBD::PO::Text::PO  |
@@ -497,7 +568,42 @@ Run this *.pl files.
 
 =head1 SUBROUTINES/METHODS
 
-none here
+=head2 init
+
+    DBD::PO->init(...);
+
+This is a class method to optimize the size of arrays.
+The default settings are performant.
+
+Do not call this method during you have an active connection!
+
+Parameters:
+
+=over 5
+
+=item * :plural
+
+Allow all plural forms.
+
+=item * :format
+
+Allow all format flags.
+
+=item * :all
+
+Allow all.
+
+=item * c-format as example
+
+Allow the format flag 'c-format'.
+For all the other format flags see L<DBD::PO::Locale::PO>.
+
+=item * allow_lost_blank_lines
+
+If no blank line is between PO entrys inside of the PO file,
+this switch allows to read the damaged file.
+
+=back
 
 =head1 DIAGNOSTICS
 
@@ -563,6 +669,12 @@ L<DBD::File>
 L<Locale::PO> has bugs, more than documented
 
 L<DBD::CSV>
+
+L<Locale::Maketext::Lexicon> xgettext.pl
+
+L<http://www.gnu.org/software/gettext/manual/gettext.html>
+
+L<http://en.wikipedia.org/wiki/Gettext>
 
 =head1 AUTHOR
 

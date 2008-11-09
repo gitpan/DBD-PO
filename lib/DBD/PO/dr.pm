@@ -3,7 +3,7 @@ package DBD::PO::dr; # DRIVER
 use strict;
 use warnings;
 
-our $VERSION = '1.00';
+our $VERSION = '2.00';
 
 use DBD::File;
 use parent qw(-norequire DBD::File::dr);
@@ -53,13 +53,13 @@ __END__
 
 DBD::PO::dr - driver class for DBD::PO
 
-$Id: dr.pm 246 2008-10-03 14:02:05Z steffenw $
+$Id: dr.pm 289 2008-11-09 13:10:28Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/dr.pm $
 
 =head1 VERSION
 
-1.00
+2.00
 
 =head1 SYNOPSIS
 

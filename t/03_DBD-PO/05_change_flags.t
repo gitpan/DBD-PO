@@ -10,12 +10,13 @@ use Test::DBD::PO::Defaults qw(
     trace_file_name
     $TABLE_0X $FILE_0X
 );
-use Test::More tests => 42 + 1;
+use Test::More tests => 43 + 1;
 use Test::NoWarnings;
 use Test::Differences;
 
 BEGIN {
     require_ok('DBI');
+    require_ok('DBD::PO'); DBD::PO->init(qw(:plural c-format php-format));
 }
 
 my $dbh;
@@ -108,7 +109,7 @@ EO_SQL
                     fuzzy      => 1,
                     c_format   => 0,
                     php_format => 0,
-                }
+                },
             ],
             callback => sub { check_file(shift, 'fuzzy') },
         },
@@ -144,7 +145,7 @@ EO_SQL
                     fuzzy      => 0,
                     c_format   => -1,
                     php_format => 0,
-                }
+                },
             ],
             callback => sub { check_file(shift, 'no-c-format') },
         },
@@ -156,7 +157,7 @@ EO_SQL
                     fuzzy      => 0,
                     c_format   => 0,
                     php_format => -1,
-                }
+                },
             ],
             callback => sub { check_file(shift, 'no-php-format') },
         },
@@ -168,20 +169,19 @@ EO_SQL
                     fuzzy      => 1,
                     c_format   => 1,
                     php_format => 1,
-                }
+                },
             ],
             callback => sub { check_file(shift, 'all') },
         },
         {
             test     => 'all=0',
             set      => [(0) x 3],
-            result   => 1,
             get      => [
                 {
                     fuzzy      => 0,
                     c_format   => 0,
                     php_format => 0,
-                }
+                },
             ],
             callback => sub { check_file(shift) },
         },
@@ -218,11 +218,11 @@ EOT
 msgid ""
 msgstr ""
 "Project-Id-Version: Testproject\n"
+"Report-Msgid-Bugs-To: Bug Reporter <bug@example.org>\n"
 "POT-Creation-Date: no POT creation date\n"
 "PO-Revision-Date: no PO revision date\n"
 "Last-Translator: Steffen Winkler <steffenw@example.org>\n"
 "Language-Team: MyTeam <cpan@example.org>\n"
-"MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Poedit-Language: German\n"
@@ -232,6 +232,7 @@ msgstr ""
 # comment_value
 #. automatic_value
 #: ref_value
+msgctxt "context_value"
 msgid "id_value"
 msgstr "str_value"
 
@@ -261,6 +262,9 @@ EOT
 #, c-format, fuzzy, php-format
 EOT
     $po .= <<'EOT';
+msgctxt ""
+"context_value1\n"
+"context_value2"
 msgid ""
 "id_value1\n"
 "id_value2"
@@ -276,6 +280,24 @@ msgstr "str_1u"
 
 msgid "id_2"
 msgstr "str_2"
+
+msgid "id_singular"
+msgid_plural "id_plural"
+msgstr[0] "str_singular"
+msgstr[1] "str_plural"
+
+msgid ""
+"id_singular1\n"
+"id_singular2"
+msgid_plural ""
+"id_plural1\n"
+"id_plural2"
+msgstr[0] ""
+"str_singular1\n"
+"str_singular2"
+msgstr[1] ""
+"str_plural1\n"
+"str_plural2"
 
 EOT
     open my $file, '< :raw', $FILE_0X or croak $OS_ERROR;

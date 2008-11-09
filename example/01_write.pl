@@ -12,9 +12,9 @@ our $TABLE_2X;
 eval 'use Test::DBD::PO::Defaults qw($PATH $TABLE_2X)';
 
 my $path  = $PATH
-            || '.';
+            || q{.};
 my $table = $TABLE_2X
-            || 'table.po';
+            || 'table_xx.po'; # for langueage xx
 
 my $dbh = DBI->connect(
     "DBI:PO:f_dir=$path;po_charset=utf-8",
@@ -65,20 +65,20 @@ EOT
 
 my @data = (
     {
-        original    => 'text original',
-        translation => 'text translated',
+        original    => 'text1 original',
+        translation => 'text1 translated',
     },
     {
-        original    => "text original\n2nd line of text2",
-        translation => "text translated\n2nd line of text2",
+        original    => "text2 original\n2nd line of text2",
+        translation => "text2 translated\n2nd line of text2",
     },
     {
-        original    => 'text original %1',
-        translation => 'text translated %1',
+        original    => 'text3 original %1',
+        translation => 'text3 translated %1',
     },
     {
-        original    => 'original [quant,_1,o_one,o_more,o_nothing]',
-        translation => 'translated [quant,_1,t_one,t_more,t_nothing]',
+        original    => 'text4 original [quant,_1,o_one,o_more,o_nothing]',
+        translation => 'text4 translated [quant,_1,t_one,t_more,t_nothing]',
     },
 );
 

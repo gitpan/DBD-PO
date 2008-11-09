@@ -3,7 +3,7 @@ package DBD::PO::Statement;
 use strict;
 use warnings;
 
-our $VERSION = '1.00';
+our $VERSION = '2.00';
 
 use DBD::File;
 use parent qw(-norequire DBD::File::Statement);
@@ -105,13 +105,13 @@ __END__
 
 DBD::PO::Statement - statement class for DBD::File
 
-$Id: Statement.pm 253 2008-10-21 07:24:44Z steffenw $
+$Id: Statement.pm 289 2008-11-09 13:10:28Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/Statement.pm $
 
 =head1 VERSION
 
-1.00
+2.00
 
 =head1 SYNOPSIS
 

@@ -10,7 +10,7 @@ use Test::DBD::PO::Defaults qw(
     trace_file_name
     $TABLE_15 $FILE_15
 );
-use Test::More tests => 33 + 1;
+use Test::More tests => 40 + 1;
 use Test::NoWarnings;
 use Test::Differences;
 
@@ -22,6 +22,10 @@ my %test_data = (
     'Project-Id-Version' => [
         [qw( Project-Id-Version )],
         [qw( MyProject )],
+    ],
+    'Report-Msgid-Bugs-Mail' => [
+        [qw( Report-Msgid-Bugs-To-Mail )],
+        [qw( report.msgid.bugs.to@example.com )],
     ],
     'Last-Translator-Mail' => [
         [qw( Last-Translator-Mail )],
@@ -37,9 +41,15 @@ my %test_data = (
         ],
     ],
     all => [
-        [qw( Project-Id-Version Last-Translator-Mail extended )],
+        [qw(
+            Project-Id-Version
+            Report-Msgid-Bugs-To-Mail
+            Last-Translator-Mail
+            extended
+        )],
         [
             'MyProject',
+            'report.msgid.bugs.to@example.com',
             'last.translator@example.com',
             [
                 'Extended-1' => 'extended_1',
@@ -142,11 +152,13 @@ EOT
     $po .= <<"EOT" if $test_of{'Project-Id-Version'};
 "Project-Id-Version: MyProject\\n"
 EOT
+    $po .= <<"EOT" if $test_of{'Report-Msgid-Bugs-To-Mail'};
+"Report-Msgid-Bugs-To:  <report.msgid.bugs.to\@example.com>\\n"
+EOT
     $po .= <<"EOT" if $test_of{'Last-Translator-Mail'};
 "Last-Translator:  <last.translator\@example.com>\\n"
 EOT
     $po .= <<"EOT";
-"MIME-Version: 1.0\\n"
 "Content-Type: text/plain; charset=utf-8\\n"
 EOT
     $po .= <<"EOT" if ! $test_of{extended};

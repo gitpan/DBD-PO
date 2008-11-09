@@ -55,6 +55,10 @@ is_deeply(
     $dbh->func($msgstr, 'split_header_msgstr'),
     [
         'Testproject',
+        [
+            'Bug Reporter',
+            'bug@example.org',
+        ],
         'no POT creation date',
         'no PO revision date',
         [
@@ -65,12 +69,12 @@ is_deeply(
             'MyTeam',
             'cpan@example.org',
         ],
-        '1.0',
         [
             'text/plain',
             'utf-8',
         ],
         '8bit',
+        undef,
         [qw(
             X-Poedit-Language      German
             X-Poedit-Country       GERMANY

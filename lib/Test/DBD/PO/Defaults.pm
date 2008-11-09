@@ -3,7 +3,7 @@ package Test::DBD::PO::Defaults;
 use strict;
 use warnings;
 
-our $VERSION = '1.00';
+our $VERSION = '2.00';
 
 use parent qw(Exporter);
 our @EXPORT_OK = qw(
@@ -59,7 +59,7 @@ our $TABLE_12           = 'dbd_po_more_tables_?.po';
 our $TABLE_13           = 'dbd_po_charset_?.po';
 our $TABLE_14           = 'dbd_po_quote.po';
 our $TABLE_15           = 'dbd_po_header_msgstr_hash.po';
-our $TABLE_2X           = 'table.po';
+our $TABLE_2X           = 'table_xx.po';
 
 our $FILE_LOCALE_PO_01 = "$PATH/$TABLE_LOCALE_PO_01";
 our $FILE_LOCALE_PO_02 = "$PATH/$TABLE_LOCALE_PO_02";
@@ -99,13 +99,13 @@ __END__
 
 Test::DBD::PO::Defaults - Some defaults to run tests for module DBD::PO
 
-$Id: Defaults.pm 253 2008-10-21 07:24:44Z steffenw $
+$Id: Defaults.pm 289 2008-11-09 13:10:28Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/Test/DBD/PO/Defaults.pm $
 
 =head1 VERSION
 
-1.00
+2.00
 
 =head1 SYNOPSIS
 

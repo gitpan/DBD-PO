@@ -43,8 +43,7 @@ my $result = $dbh->do(<<"EO_SQL");
         reference  VARCHAR,
         obsolete   INTEGER,
         fuzzy      INTEGER,
-        c_format   INTEGER,
-        php_format INTEGER,
+        msgctxt    VARCHAR,
         msgid      VARCHAR,
         msgstr     VARCHAR
     )
@@ -63,6 +62,10 @@ my @parameters = (
     $dbh->func(
         [
             'Testproject',
+            [
+                'Bug Reporter',
+                'bug@example.org',
+            ],
             'no POT creation date',
             'no PO revision date',
             [
@@ -101,11 +104,11 @@ is($result, 1, 'insert header');
 msgid ""
 msgstr ""
 "Project-Id-Version: Testproject\n"
+"Report-Msgid-Bugs-To: Bug Reporter <bug@example.org>\n"
 "POT-Creation-Date: no POT creation date\n"
 "PO-Revision-Date: no PO revision date\n"
 "Last-Translator: Steffen Winkler <steffenw@example.org>\n"
 "Language-Team: MyTeam <cpan@example.org>\n"
-"MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Poedit-Language: German\n"

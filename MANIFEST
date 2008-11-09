@@ -24,7 +24,8 @@ t/03_DBD-PO/04_change_table.t
 t/03_DBD-PO/05_change_flags.t
 t/03_DBD-PO/06_obsolete.t
 t/03_DBD-PO/07_split_header_msgstr.t
-t/03_DBD-PO/08_drop_table.t
+t/03_DBD-PO/08_previous.t
+t/03_DBD-PO/09_drop_table.t
 t/03_DBD-PO/11_crash.t
 t/03_DBD-PO/12_more_tables.t
 t/03_DBD-PO/13_charsets.t
@@ -34,6 +35,7 @@ t/03_DBD-PO/16_maketext_to_gettext.t
 t/03_DBD-PO/21_example_write.t
 t/03_DBD-PO/22_read_using_Locale-Maketext.t
 t/03_DBD-PO/23_example_read.t
+t/03_DBD-PO/31_allow_lost_blank_lines.t
 t/pod.t
 t/pod_coverage.t
 Makefile.PL

@@ -95,11 +95,11 @@ EO_SQL
 msgid ""
 msgstr ""
 "Project-Id-Version: Testproject\n"
+"Report-Msgid-Bugs-To: Bug Reporter <bug@example.org>\n"
 "POT-Creation-Date: no POT creation date\n"
 "PO-Revision-Date: no PO revision date\n"
 "Last-Translator: Steffen Winkler <steffenw@example.org>\n"
 "Language-Team: MyTeam <cpan@example.org>\n"
-"MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Poedit-Language: German\n"
@@ -109,6 +109,7 @@ msgstr ""
 # comment_value
 #. automatic_value
 #: ref_value
+msgctxt "context_value"
 msgid "id_value"
 msgstr "str_value"
 
@@ -118,6 +119,9 @@ msgstr "str_value"
 #. automatic_value2
 #: ref_value1
 #: ref_value2
+msgctxt ""
+"context_value1\n"
+"context_value2"
 msgid ""
 "id_value1\n"
 "id_value2"
@@ -133,6 +137,24 @@ msgstr "str_1"
 
 msgid "id_2"
 msgstr "str_2"
+
+msgid "id_singular"
+msgid_plural "id_plural"
+msgstr[0] "str_singular"
+msgstr[1] "str_plural"
+
+msgid ""
+"id_singular1\n"
+"id_singular2"
+msgid_plural ""
+"id_plural1\n"
+"id_plural2"
+msgstr[0] ""
+"str_singular1\n"
+"str_singular2"
+msgstr[1] ""
+"str_plural1\n"
+"str_plural2"
 
 EOT
     open my $file, '< :raw', $FILE_0X or croak $OS_ERROR;

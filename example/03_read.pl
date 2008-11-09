@@ -13,9 +13,9 @@ our $TABLE_2X;
 eval 'use Test::DBD::PO::Defaults qw($PATH $TABLE_2X)';
 
 my $path  = $PATH
-            || '.';
+            || q{.};
 my $table = $TABLE_2X
-            || 'table.po';
+            || 'table_xx.po'; # for langueage xx
 
 my $dbh;
 # Read the charset from the po file
@@ -41,17 +41,11 @@ for (1 .. 2) {
 
 # header msgid is always empty but not NULL
 {
-    my $sth = $dbh->prepare(<<"EOT");
+    my ($header_msgstr) = $dbh->selectrow_array(<<"EOT");
         SELECT msgstr
         FROM   $table
         WHERE  msgid = ''
 EOT
-
-    $sth->execute();
-
-    my $header_msgstr = $sth->fetchrow_array();
-
-    $sth->finish();
 
     my $header_struct = $dbh->func(
         $header_msgstr,

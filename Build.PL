@@ -14,6 +14,7 @@ Module::Build->new(
         DBI                => 0, # for DBD::File
         'SQL::Statement'   => 0, # for SQL::Parser
         'Params::Validate' => 0,
+        'Set::Scalar'      => 0,
         # Carp             => 0, # perl dist
         # English          => 0, # perl dist
         # Socket           => 0, # perl dist

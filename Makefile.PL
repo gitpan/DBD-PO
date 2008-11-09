@@ -14,6 +14,7 @@ WriteMakefile
                            'SQL::Statement' => 0,
                            'Test::NoWarnings' => 0,
                            'Encode' => 0,
+                           'Set::Scalar' => 0,
                            'Test::Differences' => 0,
                            'Params::Validate' => 0,
                            'DBI' => 0

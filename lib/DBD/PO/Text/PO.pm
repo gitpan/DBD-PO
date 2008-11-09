@@ -3,13 +3,14 @@ package DBD::PO::Text::PO;
 use strict;
 use warnings;
 
-our $VERSION = '1.00';
+our $VERSION = '2.00';
 
 use Carp qw(croak);
 use English qw(-no_match_vars $OS_ERROR);
 use Params::Validate qw(:all);
-use DBD::PO::Locale::PO;
+use DBD::PO::Locale::PO qw(@FORMAT_FLAGS $ALLOW_LOST_BLANK_LINES);
 use Socket qw($CRLF);
+use Set::Scalar;
 
 use parent qw(Exporter);
 our @EXPORT_OK = qw(
@@ -23,20 +24,90 @@ our $EOL_DEFAULT       = $CRLF;
 our $SEPARATOR_DEFAULT = "\n";
 our $CHARSET_DEFAULT   = 'iso-8859-1';
 
-my @cols = (
-    [ qw( msgid      -msgid      msgid      ) ],
-    [ qw( msgstr     -msgstr     msgstr     ) ],
-    [ qw( comment    -comment    comment    ) ],
-    [ qw( automatic  -automatic  automatic  ) ],
-    [ qw( reference  -reference  reference  ) ],
-    [ qw( obsolete   -obsolete   obsolete   ) ],
-    [ qw( fuzzy      -fuzzy      fuzzy      ) ],
-    [ qw( c_format   -c-format   c_format   ) ],
-    [ qw( php_format -php-format php_format ) ],
-);
-our @COL_NAMES       = map {$_->[0]} @cols;
-my  @COL_PARAMETERS  = map {$_->[1]} @cols;
-my  @COL_METHODS     = map {$_->[2]} @cols;
+our @COL_NAMES;
+my  @COL_PARAMETERS;
+my  @COL_METHODS;
+our $LOST_BLANK_LINES;
+
+sub init {
+    my (undef, @config) = @_;
+
+    my $config = Set::Scalar->new(@config);
+    my $allowed = Set::Scalar->new(
+        qw( :all :plural :previous :format allow_lost_blank_lines ),
+        @FORMAT_FLAGS,
+    );
+    my $not_allowed = $config - $allowed;
+    if ( ! $not_allowed->is_empty() ) {
+        croak 'Unkonwn config parameter: ', join ', ', $not_allowed->elements();
+    }
+    if ( $config->has(':all') ) {
+        $config->delete(':all');
+        $config->insert(qw(:plural :previous :format allow_lost_blank_lines));
+    }
+    my $has_plural = $config->has(':plural');
+    $config->delete(':plural');
+    my $has_previous = $config->has(':previous');
+    $config->delete(':previous');
+    if ( $config->has(':format') ) {
+        $config->delete(':format');
+        $config->insert(@FORMAT_FLAGS);
+    }
+    $ALLOW_LOST_BLANK_LINES = $config->has('allow_lost_blank_lines');
+    $config->delete('allow_lost_blank_lines');
+
+    my @cols = (
+        # typical
+        [ qw( msgid     -msgid     msgid     ) ], # original text
+        [ qw( msgstr    -msgstr    msgstr    ) ], # translation
+        [ qw( comment   -comment   comment   ) ], # translater comment
+        [ qw( automatic -automatic automatic ) ], # automatic comment
+        [ qw( reference -reference reference ) ],
+        [ qw( msgctxt   -msgctxt   msgctxt   ) ], # context
+        # flags
+        [ qw( fuzzy     -fuzzy     fuzzy     ) ],
+        # switch to ignore
+        [ qw( obsolete  -obsolete  obsolete  ) ],
+        # plural only
+        (
+            $has_plural
+            ? (
+                [ qw( msgid_plural -msgid_plural msgid_plural ) ],
+                                   # dummy       # dummy
+                [ qw( msgstr_0     -msgstr_0     msgstr_0     ) ], # singular
+                [ qw( msgstr_1     -msgstr_1     msgstr_1     ) ], # plural
+                [ qw( msgstr_2     -msgstr_2     msgstr_2     ) ], # plural
+                [ qw( msgstr_3     -msgstr_3     msgstr_3     ) ], # plural
+            )
+            : ()
+        ),
+        # prevoius
+        (
+            $has_previous
+            ? (
+                [ qw( previous_msgctxt      -previous_msgctxt      previous_msgctxt      ) ],
+                [ qw( previous_msgid        -previous_msgid        previous_msgid        ) ],
+                [ qw( previous_msgid_plural -previous_msgid_plural previous_msgid_plural ) ],
+            )
+            : ()
+        ),
+        # format-flags
+        (
+            map { ## no critic (ComplexMappings)
+                (my $col_name = $_) =~ tr{-}{_};
+                                     # dummy
+                ([ $col_name, "-$_", $_ ]);
+            } $config->elements()
+        ),
+    );
+
+    @COL_NAMES       = map {$_->[0]} @cols; # for SQL
+    @COL_PARAMETERS  = map {$_->[1]} @cols; # for DBD::PO::Locale::PO->new(...)
+    @COL_METHODS     = map {$_->[2]} @cols; # it is the method for the $po object
+
+    return;
+}
+init();
 
 my $dequote = sub {
     my $string = shift;
@@ -73,11 +144,11 @@ sub new { ## no critic (RequireArgUnpacking)
     $options = validate_with(
         params => $options,
         spec   => {
-            eol       => {default  => $EOL_DEFAULT},
-            separator => {default  => $SEPARATOR_DEFAULT},
-            charset   => {optional => 1},
+            eol       => {type => SCALAR, default => $EOL_DEFAULT},
+            separator => {type => SCALAR, default => $SEPARATOR_DEFAULT},
+            charset   => {type => SCALAR | UNDEF, optional => 1},
         },
-        called => "2nd parameter of new('$class', \$parameter)",
+        called => "2nd parameter of new('$class', \$hash_ref)",
     );
 
     if ($options->{charset}) {
@@ -94,7 +165,7 @@ sub write_entry { ## no critic (ExcessComplexity)
     for my $index (0 .. $#COL_NAMES) {
         my $parameter = $COL_PARAMETERS[$index];
         my $values    = $array_from_anything->($self, $col_ref->[$index]);
-        if (
+        if ( ## no critic (CascadingIfElse)
             $parameter eq '-comment'
             || $parameter eq '-automatic'
             || $parameter eq '-reference'
@@ -110,8 +181,7 @@ sub write_entry { ## no critic (ExcessComplexity)
             $line{$parameter} = $values->[0] ? 1 : 0;
         }
         elsif (
-            $parameter eq '-c-format'
-            || $parameter eq '-php-format'
+            my ($prefix) = $parameter =~ m{\A - ( [a-z-]+ ) -format \z}xms
         ) {
             my $flag = $values->[0];
             # translate:
@@ -125,8 +195,13 @@ sub write_entry { ## no critic (ExcessComplexity)
                         ? '-no'
                         : q{}
                     )
-                    . $parameter
+                    . "-$prefix-format"
                 } = 1;
+            }
+        }
+        elsif ( $parameter =~ m{\A -msgstr_ ( \d ) \z}xms ) {
+            if ( @{$values} ) {
+                $line{'-msgstr_n'}->{$1} = join "\n", @{$values};
             }
         }
         else {
@@ -147,8 +222,7 @@ sub write_entry { ## no critic (ExcessComplexity)
                 if ($parameter eq '-msgid' && tell $file_handle) {
                     croak 'A line has to have a msgid';
                 }
-                elsif ($parameter eq '-msgstr' && ! tell $file_handle
-                ) {
+                elsif ($parameter eq '-msgstr' && ! tell $file_handle) {
                     croak 'A header has to have a msgstr';
                 }
             }
@@ -156,9 +230,13 @@ sub write_entry { ## no critic (ExcessComplexity)
         ++$index;
     }
     my $line = DBD::PO::Locale::PO->new(
-        eol       => $self->{eol},
-        '-msgid'  => q{},
-        '-msgstr' => q{},
+        eol      => $self->{eol},
+        '-msgid' => q{},
+        (
+            exists $line{'-msgstr_n'}
+            ? ()
+            : ('-msgstr' => q{})
+        ),
         %line,
     )->dump();
     print {$file_handle} $line
@@ -189,7 +267,7 @@ sub read_entry { ## no critic (ExcessComplexity)
     my $index = 0;
     METHOD:
     for my $method (@COL_METHODS) {
-        if (
+        if ( ## no critic (CascadingIfElse)
             $method eq 'comment'
             || $method eq 'automatic'
             || $method eq 'reference'
@@ -210,11 +288,8 @@ sub read_entry { ## no critic (ExcessComplexity)
         ) {
             $cols[$index] = $po->$method() ? 1 : 0;
         }
-        elsif (
-            $method eq 'c_format'
-            || $method eq 'php_format'
-        ) {
-            my $flag = $po->$method();
+        elsif ( $method =~ m{\A [a-z-]+ -format \z}xms) {
+            my $flag = $po->format_flag($method);
             # translate:
             # undef => 0
             # 0     => -1
@@ -225,11 +300,38 @@ sub read_entry { ## no critic (ExcessComplexity)
                             )
                             : 0;
         }
-        else {
+        elsif (
+            $method =~ m{
+                \A (?:
+                    msgstr
+                    | (?: msg | previous_msg ) (?: ctxt | id | id_plural )
+                ) \z
+            }xms
+        ) {
+            my $data = $po->$method();
+            if (! defined $data) {
+                $data = q{};
+            }
             $cols[$index]
                 = join  $self->{separator},
                   split m{\\n}xms,
-                        $po->$method();
+                        $data;
+        }
+        elsif ( my ($n) = $method =~ m{\A msgstr_ ( \d ) \z}xms ) {
+            my $data = $po->msgstr_n();
+            if ($data) {
+                $data = $data->{$n};
+            }
+            if (! defined $data) {
+                $data = q{};
+            }
+            $cols[$index]
+                = join  $self->{separator},
+                  split m{\\n}xms,
+                        $data;
+        }
+        else {
+            croak "Strange extract method $method";
         }
         ++$index;
     }
@@ -245,13 +347,13 @@ __END__
 
 DBD::PO::Text::PO - read or write a PO file entry by entry
 
-$Id: PO.pm 254 2008-10-21 19:11:47Z steffenw $
+$Id: PO.pm 289 2008-11-09 13:10:28Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/Text/PO.pm $
 
 =head1 VERSION
 
-1.00
+2.00
 
 =head1 SYNOPSIS
 
@@ -328,18 +430,15 @@ $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD
 The DBD::PO::Text::PO was written as wrapper between
 DBD::PO and DBD::PO::Locale::PO.
 
+Do not use this module without DBD::PO!
+
      ---------------------
     |         DBI         |
      ---------------------
                |
-     ---------------------
-    |      DBD::File      |
-    |  (SQL::Statement)   |
-     ---------------------
-               |
-     ---------------------
-    |       DBD::PO       |
-     ---------------------
+     ---------------------     -----------     ---------------
+    |       DBD::PO       |---| DBD::File |---| SQL-Statement |
+     ---------------------     -----------     ---------------
                |
      ---------------------
     |  DBD::PO::Text::PO  |
@@ -352,6 +451,42 @@ DBD::PO and DBD::PO::Locale::PO.
          table_file.po
 
 =head1 SUBROUTINES/METHODS
+
+=head2 init
+
+    DBD::PO::Text::PO->init(...);
+
+This is a class method to optimize the size of arrays.
+The default settings are performant.
+
+Do not call this method during you have an active object!
+
+Parameters:
+
+=over 4
+
+=item * :plural
+
+Allow all plural forms.
+
+=item * :previous
+
+Allow all previus forms.
+
+=item * :format
+
+Allow all format flags.
+
+=item * :all
+
+Allow all.
+
+=item * c-format as example
+
+Allow the format flag 'c-format'.
+For all the other format flags see L<DBD::PO::Locale::PO>.
+
+=back
 
 =head2 method new
 
@@ -379,6 +514,8 @@ L<DBD::PO::Locale::PO>
 
 Socket
 
+L<Set::Scalar>
+
 =head1 INCOMPATIBILITIES
 
 not known
@@ -389,7 +526,7 @@ not known
 
 =head1 SEE ALSO
 
-L<DBD::CSV>
+L<DBD::File>
 
 =head1 AUTHOR
 

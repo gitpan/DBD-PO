@@ -115,7 +115,6 @@ sub check_table_file {
     my $po = <<"EOT";
 msgid ""
 msgstr ""
-"MIME-Version: 1.0\\n"
 "Content-Type: text/plain; charset=$po_charset\\n"
 "Content-Transfer-Encoding: 8bit"
 

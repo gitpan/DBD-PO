@@ -3,7 +3,7 @@ package DBD::PO::db; # DATABASE
 use strict;
 use warnings;
 
-our $VERSION = '1.00';
+our $VERSION = '2.00';
 
 use DBD::File;
 use parent qw(-norequire DBD::File::db);
@@ -20,13 +20,15 @@ our $imp_data_size = 0; ## no critic (PackageVars)
 
 my @header = (
     [ project_id_version        => 'Project-Id-Version: %s'        ],
+    [ report_msgid_bugs_to      => 'Report-Msgid-Bugs-To: %s <%s>' ],
     [ pot_creation_date         => 'POT-Creation-Date: %s'         ],
     [ po_revision_date          => 'PO-Revision-Date: %s'          ],
     [ last_translator           => 'Last-Translator: %s <%s>'      ],
     [ language_team             => 'Language-Team: %s <%s>'        ],
-    [ mime_version              => 'MIME-Version: %s'              ],
+#   [ mime_version              => 'MIME-Version: %s'              ],
     [ content_type              => 'Content-Type: %s; charset=%s'  ],
     [ content_transfer_encoding => 'Content-Transfer-Encoding: %s' ],
+    [ plural_forms              => 'Plural-Forms: %s'              ],
     [ extended                  => '%s: %s'                        ],
 );
 my @HEADER_KEYS     = map {$_->[0]} @header;
@@ -37,20 +39,24 @@ my @HEADER_DEFAULTS = (
     undef,
     undef,
     undef,
-    '1.0',
+    undef,
+#   '1.0',
     ['text/plain', undef],
     '8bit',
+    undef,
     undef,
 );
 my @HEADER_REGEX = (
     qr{\A \QProject-Id-Version:\E        \s (.*) \z}xmsi,
+    qr{\A \QReport-Msgid-Bugs-To:\E      \s ([^<]*) \s < ([^>]*) > }xmsi,
     qr{\A \QPOT-Creation-Date:\E         \s (.*) \z}xmsi,
     qr{\A \QPO-Revision-Date:\E          \s (.*) \z}xmsi,
     qr{\A \QLast-Translator:\E           \s ([^<]*) \s < ([^>]*) > }xmsi,
     qr{\A \QLanguage-Team:\E             \s ([^<]*) \s < ([^>]*) > }xmsi,
-    qr{\A \QMIME-Version:\E              \s (.*) \z}xmsi,
+#   qr{\A \QMIME-Version:\E              \s (.*) \z}xmsi,
     qr{\A \QContent-Type:\E              \s ([^;]*); \s charset=(\S*) }xmsi,
     qr{\A \QContent-Transfer-Encoding:\E \s (.*) \z}xmsi,
+    qr{\A \QPlural-Forms:\E              \s (.*) \z}xmsi,
     qr{\A ([^:]*):                       \s (.*) \z}xms,
 );
 
@@ -79,7 +85,7 @@ my $maketext_to_gettext_scalar = sub {
 };
 
 sub maketext_to_gettext {
-    my($self, @strings) = @_;
+    my ($self, @strings) = @_;
 
     return
         @strings > 1
@@ -125,18 +131,21 @@ sub quote {
 ## no critic (MagicNumbers)
 my %hash2array = (
     'Project-Id-Version'        => 0,
-    'POT-Creation-Date'         => 1,
-    'PO-Revision-Date'          => 2,
-    'Last-Translator-Name'      => [3, 0],
-    'Last-Translator-Mail'      => [3, 1],
-    'Language-Team-Name'        => [4, 0],
-    'Language-Team-Mail'        => [4, 1],
-    'MIME-Version'              => 5,
+    'Report-Msgid-Bugs-To-Name' => [1, 0],
+    'Report-Msgid-Bugs-To-Mail' => [1, 1],
+    'POT-Creation-Date'         => 2,
+    'PO-Revision-Date'          => 3,
+    'Last-Translator-Name'      => [4, 0],
+    'Last-Translator-Mail'      => [4, 1],
+    'Language-Team-Name'        => [5, 0],
+    'Language-Team-Mail'        => [5, 1],
+#   'MIME-Version'              => ,
     'Content-Type'              => [6, 0],
     charset                     => [6, 1],
     'Content-Transfer-Encoding' => 7,
+    'Plural-Forms'              => 8,
 );
-my $index_extended = 8;
+my $index_extended = 9;
 ## use critic (MagicNumbers)
 
 my $valid_keys_regex = '(?xsm-i:\A (?: '
@@ -364,13 +373,13 @@ __END__
 
 DBD::PO::db - database class for DBD::PO
 
-$Id: db.pm 246 2008-10-03 14:02:05Z steffenw $
+$Id: db.pm 289 2008-11-09 13:10:28Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/db.pm $
 
 =head1 VERSION
 
-1.00
+2.00
 
 =head1 SYNOPSIS
 
