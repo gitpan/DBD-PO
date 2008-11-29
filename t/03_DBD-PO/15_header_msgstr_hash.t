@@ -159,6 +159,7 @@ EOT
 "Last-Translator:  <last.translator\@example.com>\\n"
 EOT
     $po .= <<"EOT";
+"MIME-Version: 1.0\\n"
 "Content-Type: text/plain; charset=utf-8\\n"
 EOT
     $po .= <<"EOT" if ! $test_of{extended};

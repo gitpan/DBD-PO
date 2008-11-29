@@ -1,13 +1,14 @@
 #!perl
 
-# Lexicon
+# create a package for a lexicon
+# here inplace
 {
     package Example::L10N;
 
     use strict;
     use warnings;
 
-    use parent qw(Locale::Maketext);
+    use parent qw(Locale::Maketext); # inheritance
     use Locale::Maketext::Lexicon;
 
     # for test examples only
@@ -18,10 +19,12 @@
     my $path  = $PATH
                 || q{.};
     my $table = $TABLE_2X
-                || 'table_xx.po'; # for langueage xx
+                || 'table_de.po'; # for langueage de
 
+    # The lexicon is for langueage xx
+    # and has 1 utf-8 po file.
     Locale::Maketext::Lexicon->import({
-        xx      => [
+        de      => [
             Gettext => "$path/$table",
         ],
         _decode => 1, # unicode mode
@@ -32,23 +35,30 @@ use strict;
 use warnings;
 
 use Carp qw(croak);
-use Tie::Sub ();
+use Tie::Sub (); # allow to write a subroutine call as fetch hash
 
-my $lh = Example::L10N->get_handle('xx') or croak 'What language';
+my $language = 'de_DE';
+# create a language handle for language xx
+my $lh = Example::L10N->get_handle($language)
+    or croak 'What language';
+$lh->{numf_comma} = $language =~ m{\A de_}xms;
 # tie for interpolation in strings
-# $lh{1}      will be the same like $lh->maketext(1)
-# $lh{[1, 2]} will be the same like $lh->maketext(1, 2)
-tie my %lh, 'Tie::Sub', sub { return $lh->maketext(@_) };
+# $__{1}      will be the same like $lh->maketext(1)
+# $__{[1]}    will be the same like $lh->maketext(1)
+# $__{[1, 2]} will be the same like $lh->maketext(1, 2)
+tie my %__, 'Tie::Sub', sub { return $lh->maketext(@_) };
 
+# write a long text with all the different translatons
 print <<"EOT";
-$lh{'text1 original'}
+$__{'text1 original'}
 
-$lh{"text2 original\n2nd line of text2"}
+$__{"text2 original\n2nd line of text2"}
 
-$lh{['text3 original [_1]', 'is good']}
+$__{['text3 original [_1]', 'is good']}
 
-$lh{['text4 original [quant,_1,o_one,o_more,o_nothing]', 0]}
-$lh{['text4 original [quant,_1,o_one,o_more,o_nothing]', 1]}
-$lh{['text4 original [quant,_1,o_one,o_more,o_nothing]', 2]}
+$__{['text4 original [quant,_1,o_one,o_more,o_nothing]', 0]}
+$__{['text4 original [quant,_1,o_one,o_more,o_nothing]', 1]}
+$__{['text4 original [quant,_1,o_one,o_more,o_nothing]', 1.5]}
+$__{['text4 original [quant,_1,o_one,o_more,o_nothing]', 2]}
 EOT
 ;

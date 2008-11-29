@@ -79,6 +79,7 @@ my @parameters = (
             undef,
             undef,
             undef,
+            undef,
             [qw(
                 X-Poedit-Language      German
                 X-Poedit-Country       GERMANY
@@ -109,6 +110,7 @@ msgstr ""
 "PO-Revision-Date: no PO revision date\n"
 "Last-Translator: Steffen Winkler <steffenw@example.org>\n"
 "Language-Team: MyTeam <cpan@example.org>\n"
+"MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Poedit-Language: German\n"

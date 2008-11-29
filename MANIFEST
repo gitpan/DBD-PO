@@ -3,6 +3,7 @@ Changes
 example/01_write.pl
 example/02_read_using_Locale-Maketext.pl
 example/03_read.pl
+example/04_join.pl
 lib/DBD/PO.pm
 lib/DBD/PO/db.pm
 lib/DBD/PO/dr.pm
@@ -35,6 +36,7 @@ t/03_DBD-PO/16_maketext_to_gettext.t
 t/03_DBD-PO/21_example_write.t
 t/03_DBD-PO/22_read_using_Locale-Maketext.t
 t/03_DBD-PO/23_example_read.t
+t/03_DBD-PO/24_example_join.t
 t/03_DBD-PO/31_allow_lost_blank_lines.t
 t/pod.t
 t/pod_coverage.t

@@ -16,6 +16,7 @@ my $path  = $PATH
 my $table = $TABLE_2X
             || 'table_xx.po'; # for langueage xx
 
+# connect to database (directory)
 my $dbh = DBI->connect(
     "DBI:PO:f_dir=$path;po_charset=utf-8",
     undef,
@@ -26,6 +27,7 @@ my $dbh = DBI->connect(
     },
 ) or croak 'Cannot connect: ' . DBI->errstr();
 
+# create the new po file (table)
 $dbh->do(<<"EOT");
     CREATE TABLE
         $table (
@@ -41,11 +43,13 @@ $dbh->do(<<"EOT");
         )
 EOT
 
+# build a default header
 my $header_msgstr = $dbh->func(
-    undef, # minimized
+    undef,                 # minimized
     'build_header_msgstr', # function name
 );
 
+# write the header (first row)
 # header msgid is always empty, will set to NULL or q{} and get back as q{}
 # header msgstr must have a length
 $dbh->do(<<"EOT", undef, $header_msgstr);
@@ -54,6 +58,7 @@ $dbh->do(<<"EOT", undef, $header_msgstr);
     ) VALUES (?)
 EOT
 
+# prepare to write some po entrys (rows)
 # row msgid must have a length
 # row msgstr can be empty (NULL or q{}), will get back as q{}
 my $sth = $dbh->prepare(<<"EOT");
@@ -63,6 +68,7 @@ my $sth = $dbh->prepare(<<"EOT");
     ) VALUES (?, ?)
 EOT
 
+# declare some data only
 my @data = (
     {
         original    => 'text1 original',
@@ -82,6 +88,7 @@ my @data = (
     },
 );
 
+# write all the data into the po file (table)
 for my $data (@data) {
     $sth->execute(
         $dbh->func(
@@ -91,4 +98,5 @@ for my $data (@data) {
     );
 };
 
+# all done
 $dbh->disconnect();

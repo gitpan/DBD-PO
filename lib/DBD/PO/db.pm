@@ -3,7 +3,7 @@ package DBD::PO::db; # DATABASE
 use strict;
 use warnings;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 use DBD::File;
 use parent qw(-norequire DBD::File::db);
@@ -25,7 +25,7 @@ my @header = (
     [ po_revision_date          => 'PO-Revision-Date: %s'          ],
     [ last_translator           => 'Last-Translator: %s <%s>'      ],
     [ language_team             => 'Language-Team: %s <%s>'        ],
-#   [ mime_version              => 'MIME-Version: %s'              ],
+    [ mime_version              => 'MIME-Version: %s'              ],
     [ content_type              => 'Content-Type: %s; charset=%s'  ],
     [ content_transfer_encoding => 'Content-Transfer-Encoding: %s' ],
     [ plural_forms              => 'Plural-Forms: %s'              ],
@@ -40,24 +40,33 @@ my @HEADER_DEFAULTS = (
     undef,
     undef,
     undef,
-#   '1.0',
+   '1.0',
     ['text/plain', undef],
     '8bit',
     undef,
     undef,
 );
 my @HEADER_REGEX = (
-    qr{\A \QProject-Id-Version:\E        \s (.*) \z}xmsi,
-    qr{\A \QReport-Msgid-Bugs-To:\E      \s ([^<]*) \s < ([^>]*) > }xmsi,
-    qr{\A \QPOT-Creation-Date:\E         \s (.*) \z}xmsi,
-    qr{\A \QPO-Revision-Date:\E          \s (.*) \z}xmsi,
-    qr{\A \QLast-Translator:\E           \s ([^<]*) \s < ([^>]*) > }xmsi,
-    qr{\A \QLanguage-Team:\E             \s ([^<]*) \s < ([^>]*) > }xmsi,
-#   qr{\A \QMIME-Version:\E              \s (.*) \z}xmsi,
-    qr{\A \QContent-Type:\E              \s ([^;]*); \s charset=(\S*) }xmsi,
-    qr{\A \QContent-Transfer-Encoding:\E \s (.*) \z}xmsi,
-    qr{\A \QPlural-Forms:\E              \s (.*) \z}xmsi,
-    qr{\A ([^:]*):                       \s (.*) \z}xms,
+    qr{\A \QProject-Id-Version:\E        \s* (.*) \s* \z}xmsi,
+    [
+        qr{\A \QReport-Msgid-Bugs-To:\E  \s* ([^<]*) \s+ < ([^>]*) > \s* \z}xmsi,
+        qr{\A \QReport-Msgid-Bugs-To:\E  \s* (.*) () \s* \z}xmsi,
+    ],
+    qr{\A \QPOT-Creation-Date:\E         \s* (.*) \s* \z}xmsi,
+    qr{\A \QPO-Revision-Date:\E          \s* (.*) \s* \z}xmsi,
+    [
+        qr{\A \QLast-Translator:\E       \s* ([^<]*) \s+ < ([^>]*) > \s* \z}xmsi,
+        qr{\A \QLast-Translator:\E       \s* (.*) () \s* \z}xmsi,
+    ],
+    [
+        qr{\A \QLanguage-Team:\E         \s* ([^<]*) \s+ < ([^>]*) > \s* \z}xmsi,
+        qr{\A \QLanguage-Team:\E         \s* (.*) () \s* \z}xmsi,
+    ],
+    qr{\A \QMIME-Version:\E              \s* (.*) \s* \z}xmsi,
+    qr{\A \QContent-Type:\E              \s* ([^;]*); \s* charset=(\S*) \s* \z}xmsi,
+    qr{\A \QContent-Transfer-Encoding:\E \s* (.*) \s* \z}xmsi,
+    qr{\A \QPlural-Forms:\E              \s* (.*) \s* \z}xmsi,
+    qr{\A ([^:]*) :                      \s* (.*) \s* \z}xms,
 );
 
 my $maketext_to_gettext_scalar = sub {
@@ -139,13 +148,13 @@ my %hash2array = (
     'Last-Translator-Mail'      => [4, 1],
     'Language-Team-Name'        => [5, 0],
     'Language-Team-Mail'        => [5, 1],
-#   'MIME-Version'              => ,
-    'Content-Type'              => [6, 0],
-    charset                     => [6, 1],
-    'Content-Transfer-Encoding' => 7,
-    'Plural-Forms'              => 8,
+    'MIME-Version'              => 6,
+    'Content-Type'              => [7, 0],
+    charset                     => [7, 1],
+    'Content-Transfer-Encoding' => 8,
+    'Plural-Forms'              => 9,
 );
-my $index_extended = 9;
+my $index_extended = 10;
 ## use critic (MagicNumbers)
 
 my $valid_keys_regex = '(?xsm-i:\A (?: '
@@ -237,7 +246,9 @@ sub build_header_msgstr { ## no critic (ArgUnpacking)
             }
         }
         else {
-            push @header, sprintf $format, map {defined $_ ? $_ : q{}} @data;
+            my $row = sprintf $format, map {defined $_ ? $_ : q{}} @data;
+            $row =~ s{\s* <> \z}{}xms; # delete an empty mail address
+            push @header, $row;
         }
     }
 
@@ -291,6 +302,7 @@ EOT
         my $line = shift @lines;
         defined $line
            or last LINE;
+        # run the regex for the selected column
         my $index = 0;
         HEADER_REGEX:
         for my $header_regex (@HEADER_REGEX) {
@@ -298,8 +310,23 @@ EOT
                 ++$index;
                 next HEADER_REGEX;
             }
-            my @result = $line =~ $header_regex;
+            my @result;
+            # more regexes are necessary
+            if (ref $header_regex eq 'ARRAY') {
+                # run from special to more common regex
+                INNER_REGEX:
+                for my $inner_regex ( @{$header_regex} ) {
+                    @result = $line =~ $inner_regex;
+                    last INNER_REGEX if @result;
+                }
+            }
+            # only 1 regex is necessary
+            else {
+                @result = $line =~ $header_regex;
+            }
+            # save the result to the selected column
             if (@result) {
+                # some columns are multiline
                 defined $cols[$index]
                 ? (
                     ref $cols[$index] eq 'ARRAY'
@@ -373,13 +400,13 @@ __END__
 
 DBD::PO::db - database class for DBD::PO
 
-$Id: db.pm 289 2008-11-09 13:10:28Z steffenw $
+$Id: db.pm 301 2008-11-29 21:43:39Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/db.pm $
 
 =head1 VERSION
 
-2.00
+2.01
 
 =head1 SYNOPSIS
 

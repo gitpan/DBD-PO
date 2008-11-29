@@ -69,6 +69,7 @@ is_deeply(
             'MyTeam',
             'cpan@example.org',
         ],
+        '1.0',
         [
             'text/plain',
             'utf-8',

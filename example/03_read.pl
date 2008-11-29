@@ -18,7 +18,7 @@ my $table = $TABLE_2X
             || 'table_xx.po'; # for langueage xx
 
 my $dbh;
-# Read the charset from the po file
+# Read the charset from the po file (table)
 # and than change the encoding to this charset.
 # This is the way to read unicode chars from unknown po files.
 my $po_charset = q{};
@@ -39,6 +39,7 @@ for (1 .. 2) {
     );
 }
 
+# get the header (first row) from po file (table)
 # header msgid is always empty but not NULL
 {
     my ($header_msgstr) = $dbh->selectrow_array(<<"EOT");
@@ -47,17 +48,20 @@ for (1 .. 2) {
         WHERE  msgid = ''
 EOT
 
+    # get some internals
     my $header_struct = $dbh->func(
         $header_msgstr,
         'split_header_msgstr', # function name
     );
 
+    # and show all
     print Data::Dumper->new([$header_struct], [qw(header_struct)])
                       ->Quotekeys(0)
                       ->Useqq(1)
                       ->Dump();
 }
 
+# get all the po entys (rows) from po file (table)
 # row msgid is never empty
 {
     my $sth = $dbh->prepare(<<"EOT");
@@ -69,6 +73,7 @@ EOT
     $sth->execute();
 
     while (my $row = $sth->fetchrow_hashref()) {
+        # and show each po entry (row)
         print Data::Dumper->new([$row], [qw(row)])
                           ->Quotekeys(0)
                           ->Useqq(1)
@@ -76,4 +81,5 @@ EOT
     }
 }
 
+# all done
 $dbh->disconnect();

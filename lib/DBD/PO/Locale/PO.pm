@@ -3,7 +3,7 @@ package DBD::PO::Locale::PO;
 use strict;
 use warnings;
 
-our $VERSION = '0.21.02';
+our $VERSION = '0.21.03';
 
 use Carp qw(croak);
 use English qw(-no_match_vars $EVAL_ERROR $OS_ERROR);
@@ -626,7 +626,7 @@ __END__
 
 DBD::PO::Locale::PO - Perl module for manipulating .po entries from GNU gettext
 
-$Id: PO.pm 289 2008-11-09 13:10:28Z steffenw $
+$Id: PO.pm 301 2008-11-29 21:43:39Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/Locale/PO.pm $
 
@@ -703,6 +703,7 @@ msgid, like this:
             . "PO-Revision-Date: YEAR-MO-DA HO:MI +ZONE\n"
             . "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
             . "Language-Team: LANGUAGE <LL@li.org>\n"
+            . "MIME-Version: 1.0\n"
             . "Content-Type: text/plain; charset=CHARSET\n"
             . "Content-Transfer-Encoding: ENCODING\n",
     );

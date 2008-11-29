@@ -1,5 +1,10 @@
 Revision history for Perl extension DBD::PO.
 
+2.01  Sat Nov 29 22:00:00 2008
+- more comments in examples
+- new example using SQL join
+- better header acceptance
+
 2.00  Tue Nov 15 21:00:00 2008
 - Allow performance settings at use DBD::PO
   like ':plural', ':previous', ':format' and 'allow_lost_blank_lines'.

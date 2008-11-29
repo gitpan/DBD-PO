@@ -3,7 +3,7 @@ package DBD::PO;
 use strict;
 use warnings;
 
-our $VERSION     = '2.00';
+our $VERSION     = '2.01';
 our $ATTRIBUTION = __PACKAGE__
                    . ' by Steffen Winkler <steffenw at cpan.org>';
 
@@ -30,13 +30,13 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 290 2008-11-09 13:21:26Z steffenw $
+$Id: PO.pm 301 2008-11-29 21:43:39Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
 =head1 VERSION
 
-2.00
+2.01
 
 =head1 SYNOPSIS
 
@@ -266,6 +266,7 @@ Note that the default encoding is nothing, not 'utf-8'.
                 'cpan@example.org',
             ],
             # undef to accept the defaut settings
+            undef, # mime version (1.0)
             undef, # arrayref of content type (text/plain) and charset
                    # 'iso-8859-1' or given as po_charset at the connect method
             undef, # content transfer encoding (8bit)
@@ -296,6 +297,7 @@ Note that the default encoding is nothing, not 'utf-8'.
             'Language-Team-Mail'        => 'cpan@example.org',
             # Do not set the following values.
             # They will be set automaticly.
+            'MIME-Version'              => '1.0',
             'Content-Type'              => 'text/plain',
             charset                     => $po_charset || 'iso-8859-1',
             'Content-Transfer-Encoding' => '8bit',
@@ -660,17 +662,54 @@ available on platforms. Using flock() is disabled on MacOS and Windows
 95: There's no locking at all (perhaps not so important on these
 operating systems, as they are for single users anyways).
 
+In case of join tables, SQL::Statement does not allow a file suffix.
+
+This is OK:
+
+    SELECT msgstr
+    FROM   de.po
+    WHERE  msgid <> ''
+
+This is not OK:
+
+    SELECT     de.po.msgstr, ru.po.msgstr
+    FROM       de.po
+    INNER JOIN ru.po
+    ON         de.po.msgid = ru.po.msgid
+    WHERE      de.po.msgid <> ''
+
+This is not OK too:
+
+    SELECT     t1.msgstr, t2.msgstr
+    FROM       de.po AS t1
+    INNER JOIN ru.po AS t2
+    ON         t1.msgid = t2.msgid
+    WHERE      t1.msgid <> ''
+
+This is OK now but tables were renamed:
+
+    SELECT     de.msgstr, ru.msgstr
+    FROM       de
+    INNER JOIN ru
+    ON         de.msgid = ru.msgid
+    WHERE      de.msgid <> ''
+
+The example 04_join.pl of this distribution
+shows the solution as robust workaround.
+
 =head1 SEE ALSO
 
 DBI
 
-L<DBD::File>
+L<DBD::File> as base class
+
+L<SQL::Statement> and L<SQL::Statement::Syntax> as Parser
 
 L<Locale::PO> has bugs, more than documented
 
-L<DBD::CSV>
+L<DBD::CSV> my guideline
 
-L<Locale::Maketext::Lexicon> xgettext.pl
+L<Locale::Maketext::Lexicon> see xgettext.pl
 
 L<http://www.gnu.org/software/gettext/manual/gettext.html>
 
