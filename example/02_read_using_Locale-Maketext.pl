@@ -1,12 +1,18 @@
 #!perl
+# $Id: 02_read_using_Locale-Maketext.pl 315 2008-12-17 21:09:23Z steffenw $
+
+use strict;
+use warnings;
 
 # create a package for a lexicon
 # here inplace
 {
-    package Example::L10N;
+    package Example::L10N; ## no critic (FilenameMatchesPackage);
 
     use strict;
     use warnings;
+
+    our $VERSION = 0;
 
     use parent qw(Locale::Maketext); # inheritance
     use Locale::Maketext::Lexicon;
@@ -14,7 +20,7 @@
     # for test examples only
     our $PATH;
     our $TABLE_2X;
-    eval 'use Test::DBD::PO::Defaults qw($PATH $TABLE_2X)';
+    () = eval 'use Test::DBD::PO::Defaults qw(\$PATH $TABLE_2X)'; ## no critic (StringyEval InterpolationOfMetachars)
 
     my $path  = $PATH
                 || q{.};
@@ -31,9 +37,6 @@
     });
 }
 
-use strict;
-use warnings;
-
 use Carp qw(croak);
 use Tie::Sub (); # allow to write a subroutine call as fetch hash
 
@@ -46,10 +49,10 @@ $lh->{numf_comma} = $language =~ m{\A de_}xms;
 # $__{1}      will be the same like $lh->maketext(1)
 # $__{[1]}    will be the same like $lh->maketext(1)
 # $__{[1, 2]} will be the same like $lh->maketext(1, 2)
-tie my %__, 'Tie::Sub', sub { return $lh->maketext(@_) };
+tie my %__, 'Tie::Sub', sub { return $lh->maketext(@_) }; ## no critic (Ties)
 
 # write a long text with all the different translatons
-print <<"EOT";
+print <<"EOT"; ## no critic (CheckedSyscalls)
 $__{'text1 original'}
 
 $__{"text2 original\n2nd line of text2"}

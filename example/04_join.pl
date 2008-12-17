@@ -1,14 +1,18 @@
 #!perl
+# $Id: 04_join.pl 315 2008-12-17 21:09:23Z steffenw $
 
 use strict;
 use warnings;
 
+our $VERSION = 0;
+
 use Carp qw(croak);
+use English qw(-no_match_vars $OS_ERROR);
 use DBI ();
 
 # for test examples only
 our $PATH;
-eval 'use Test::DBD::PO::Defaults qw($PATH)';
+() = eval 'use Test::DBD::PO::Defaults qw($PATH)'; ## no critic (StringyEval InterpolationOfMetachars)
 
 my $path = $PATH
            || q{.};
@@ -18,8 +22,10 @@ my $table3 = 'de_to_ru';
 
 # write a file to disk only
 {
-    open my $file, '>', "$path/$table1.po";
-    print {$file} <<'EOT';
+    my $file_name = "$path/$table1.po";
+    open my $file, '>', $file_name ## no critic (BriefOpen)
+        or croak "Can't open file $file_name: $OS_ERROR";
+    print {$file} <<'EOT' or croak "Can't write file $file_name: $OS_ERROR";
 msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
@@ -40,8 +46,10 @@ EOT
 
 # write a file to disk only
 {
-    open my $file, '>', "$path/$table2.po";
-    print {$file} <<'EOT';
+    my $file_name = "$path/$table2.po";
+    open my $file, '>', $file_name ## no critic (BriefOpen)
+        or croak "Can't open file $file_name: $OS_ERROR";
+    print {$file} <<'EOT' or croak "Can't write file $file_name: $OS_ERROR";
 msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
@@ -123,11 +131,15 @@ $dbh->disconnect();
 sub cut_file_name_suffix {
     rename "$path/$table1.po", "$path/$table1";
     rename "$path/$table2.po", "$path/$table2";
+
+    return;
 }
 
 sub restore_file_name_suffix {
     rename "$path/$table1", "$path/$table1.po";
     rename "$path/$table2", "$path/$table2.po";
+
+    return;
 }
 
 # do it in case of error too

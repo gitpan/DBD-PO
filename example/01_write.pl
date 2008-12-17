@@ -1,7 +1,10 @@
 #!perl
+# $Id: 01_write.pl 315 2008-12-17 21:09:23Z steffenw $
 
 use strict;
 use warnings;
+
+our $VERSION = 0;
 
 use Carp qw(croak);
 use DBI ();
@@ -9,7 +12,7 @@ use DBI ();
 # for test examples only
 our $PATH;
 our $TABLE_2X;
-eval 'use Test::DBD::PO::Defaults qw($PATH $TABLE_2X)';
+() = eval 'use Test::DBD::PO::Defaults qw($PATH $TABLE_2X)'; ## no critic (StringyEval InterpolationOfMetachars)
 
 my $path  = $PATH
             || q{.};

@@ -3,7 +3,7 @@ package DBD::PO::db; # DATABASE
 use strict;
 use warnings;
 
-our $VERSION = '2.01';
+our $VERSION = '2.02';
 
 use DBD::File;
 use parent qw(-norequire DBD::File::db);
@@ -255,6 +255,28 @@ sub build_header_msgstr { ## no critic (ArgUnpacking)
     return join "\n", @header;
 }
 
+sub get_header_msgstr { ## no critic (ArgUnpacking)
+    my ($dbh, $hash_ref) = validate_pos(
+        @_,
+        {isa   => 'DBI::db'},
+        {type  => HASHREF},
+    );
+
+    my $sth = $dbh->prepare(<<"EOT") or croak $dbh->errstr();
+        SELECT msgstr
+        FROM $hash_ref->{table}
+        WHERE msgid = ''
+EOT
+    $sth->execute()
+        or croak $sth->errstr();
+    my ($msgstr) = $sth->fetchrow_array()
+        or croak $sth->errstr();
+    $sth->finish()
+        or croak $sth->errstr();
+
+    return $msgstr;
+}
+
 sub split_header_msgstr { ## no critic (ArgUnpacking)
     my ($dbh, $anything) = validate_pos(
         @_,
@@ -262,29 +284,9 @@ sub split_header_msgstr { ## no critic (ArgUnpacking)
         {type  => SCALAR | HASHREF},
     );
 
-    my $msgstr;
-    if (ref $anything eq 'HASH') {
-        validate_with(
-            params => my $hash_ref = $anything,
-            spec   => {
-                table => {type => SCALAR},
-            },
-        );
-        my $sth = $dbh->prepare(<<"EOT") or croak $dbh->errstr();
-            SELECT msgstr
-            FROM $hash_ref->{table}
-            WHERE msgid = ''
-EOT
-        $sth->execute()
-            or croak $sth->errstr();
-        ($msgstr) = $sth->fetchrow_array()
-            or croak $sth->errstr();
-        $sth->finish()
-            or croak $sth->errstr();
-    }
-    else {
-        $msgstr = $anything;
-    }
+    my $msgstr = (ref $anything eq 'HASH')
+                 ? $dbh->func($anything, 'get_header_msgstr')
+                 : $anything;
 
     my $po = DBD::PO::Locale::PO->new(
         eol => defined $dbh->FETCH('eol')
@@ -355,7 +357,7 @@ sub get_header_msgstr_data { ## no critic (ArgUnpacking)
         {isa  => 'DBI::db'},
         {type => ARRAYREF | SCALAR | HASHREF},
         {
-            type => SCALAR | ARRAYREF,
+            type      => SCALAR | ARRAYREF,
             callbacks => {
                 check_keys => sub {
                     my $key = shift;
@@ -400,13 +402,13 @@ __END__
 
 DBD::PO::db - database class for DBD::PO
 
-$Id: db.pm 301 2008-11-29 21:43:39Z steffenw $
+$Id: db.pm 312 2008-12-17 21:01:23Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/db.pm $
 
 =head1 VERSION
 
-2.01
+2.02
 
 =head1 SYNOPSIS
 
@@ -423,6 +425,8 @@ database class for DBD::PO
 =head2 method quote
 
 =head2 method build_header_msgstr
+
+=head2 method get_header_msgstr
 
 =head2 method split_header_msgstr
 

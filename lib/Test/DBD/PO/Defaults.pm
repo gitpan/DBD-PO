@@ -3,13 +3,14 @@ package Test::DBD::PO::Defaults;
 use strict;
 use warnings;
 
-our $VERSION = '2.01';
+our $VERSION = '2.02';
 
 use parent qw(Exporter);
 our @EXPORT_OK = qw(
     $TRACE
     $DROP_TABLE
 
+    $UNTAINT_FILENAME_PATTERN
     $PATH
     $SEPARATOR
     $EOL
@@ -45,10 +46,17 @@ use Socket qw($LF $CRLF);
 our $TRACE = 1;
 our $DROP_TABLE = 1;
 
-our ($PATH) = getcwd() =~ m{(.*)}xms;
+our $UNTAINT_FILENAME_PATTERN = qr{\A (
+    (?:
+        (?: [A-Z] : )
+        | //
+    )?
+    [0-9A-Z_\-/\. ]+
+) \z}xmsi;
+our ($PATH) = getcwd() =~ $UNTAINT_FILENAME_PATTERN;
 $PATH =~ s{\\}{/}xmsg;
-our $SEPARATOR       = $LF;
-our $EOL             = $CRLF;
+our $SEPARATOR = $LF;
+our $EOL       = $CRLF;
 
 my  $TABLE_LOCALE_PO_01 = 'locale_po_01.po';
 my  $TABLE_LOCALE_PO_02 = 'locale_po_02.po';
@@ -99,13 +107,13 @@ __END__
 
 Test::DBD::PO::Defaults - Some defaults to run tests for module DBD::PO
 
-$Id: Defaults.pm 301 2008-11-29 21:43:39Z steffenw $
+$Id: Defaults.pm 312 2008-12-17 21:01:23Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/Test/DBD/PO/Defaults.pm $
 
 =head1 VERSION
 
-2.01
+2.02
 
 =head1 SYNOPSIS
 

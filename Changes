@@ -1,5 +1,9 @@
 Revision history for Perl extension DBD::PO.
 
+2.02  Wed Dec 17 22:00:00 2008
+- some author tests
+- fix Perl critic errors
+
 2.01  Sat Nov 29 22:00:00 2008
 - more comments in examples
 - new example using SQL join

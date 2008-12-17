@@ -38,6 +38,8 @@ t/03_DBD-PO/22_read_using_Locale-Maketext.t
 t/03_DBD-PO/23_example_read.t
 t/03_DBD-PO/24_example_join.t
 t/03_DBD-PO/31_allow_lost_blank_lines.t
+t/chars.t
+t/perl_critic.t
 t/pod.t
 t/pod_coverage.t
 Makefile.PL

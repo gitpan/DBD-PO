@@ -1,7 +1,10 @@
 #!perl
+# $Id: 03_read.pl 315 2008-12-17 21:09:23Z steffenw $
 
 use strict;
 use warnings;
+
+our $VERSION = 0;
 
 use Carp qw(croak);
 use DBI ();
@@ -10,7 +13,7 @@ use Data::Dumper ();
 # for test examples only
 our $PATH;
 our $TABLE_2X;
-eval 'use Test::DBD::PO::Defaults qw($PATH $TABLE_2X)';
+() = eval 'use Test::DBD::PO::Defaults qw($PATH $TABLE_2X)'; ## no critic (StringyEval InterpolationOfMetachars)
 
 my $path  = $PATH
             || q{.};
@@ -55,7 +58,7 @@ EOT
     );
 
     # and show all
-    print Data::Dumper->new([$header_struct], [qw(header_struct)])
+    print Data::Dumper->new([$header_struct], [qw(header_struct)]) ## no critic (LongChainsOfMethodCalls CheckedSyscalls)
                       ->Quotekeys(0)
                       ->Useqq(1)
                       ->Dump();
@@ -74,7 +77,7 @@ EOT
 
     while (my $row = $sth->fetchrow_hashref()) {
         # and show each po entry (row)
-        print Data::Dumper->new([$row], [qw(row)])
+        print Data::Dumper->new([$row], [qw(row)]) ## no critic (LongChainsOfMethodCalls CheckedSyscalls)
                           ->Quotekeys(0)
                           ->Useqq(1)
                           ->Dump();

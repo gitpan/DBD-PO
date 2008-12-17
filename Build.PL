@@ -26,6 +26,7 @@ Module::Build->new(
         'Test::Exception'   => 0,
         'Test::Differences' => 0,
         Encode              => 0,
+        'File::Find'        => 0,
         # Cwd               => 0, # perl dist
         # charnames         => 0, # perl dist
     },

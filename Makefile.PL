@@ -17,6 +17,7 @@ WriteMakefile
                            'Set::Scalar' => 0,
                            'Test::Differences' => 0,
                            'Params::Validate' => 0,
+                           'File::Find' => 0,
                            'DBI' => 0
                          }
         )

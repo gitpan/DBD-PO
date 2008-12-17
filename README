@@ -1,4 +1,4 @@
-DBD::PO version 2.01
+DBD::PO version 2.02
 ====================
 
 This is a driver to read/write PO files.
@@ -26,8 +26,8 @@ This module requires these other modules and libraries:
 
     parent
     DBI
+    SQL::Statement
     Params::Validate
-    Readonly
 
 COPYRIGHT AND LICENCE
 
