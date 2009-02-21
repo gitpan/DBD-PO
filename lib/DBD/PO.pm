@@ -3,7 +3,7 @@ package DBD::PO;
 use strict;
 use warnings;
 
-our $VERSION     = '2.02';
+our $VERSION     = '2.03';
 our $ATTRIBUTION = __PACKAGE__
                    . ' by Steffen Winkler <steffenw at cpan.org>';
 
@@ -30,13 +30,13 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 312 2008-12-17 21:01:23Z steffenw $
+$Id: PO.pm 328 2009-02-21 07:06:02Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
 =head1 VERSION
 
-2.02
+2.03
 
 =head1 SYNOPSIS
 
@@ -83,7 +83,7 @@ $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD
         undef,                # Password is not used.
         {
             RaiseError => 1,  # The easy way to handle exceptions.
-            PrintError => 0,  # No extra console output.
+            PrintError => 0,  # The easy way to handle exceptions as warnings.
         },
     ) or croak 'Cannot connect: ' . DBI->errstr();
 
@@ -532,6 +532,43 @@ For conditional execution use DROP TABLE IF EXISTS statement.
 
     $dbh->disconnect();
 
+=head2 dot's in file suffix and SQL
+
+In case of join tables, SQL::Statement does not allow a file suffix.
+
+File suffix can be used here:
+
+    SELECT msgstr
+    FROM   de.po
+    WHERE  msgid <> ''
+
+But not here:
+
+    SELECT     de.po.msgstr, ru.po.msgstr
+    FROM       de.po
+    INNER JOIN ru.po
+    ON         de.po.msgid = ru.po.msgid
+    WHERE      de.po.msgid <> ''
+
+Set a mapping hash like:
+
+    $dbh->{po_tables}->{'de'} = {file => 'de.po'};
+    $dbh->{po_tables}->{'ru'} = {file => 'ru.po'};
+
+Do not write the suffix now:
+
+    SELECT     de.msgstr, ru.msgstr
+    FROM       de
+    INNER JOIN ru
+    ON         de.msgid = ru.msgid
+    WHERE      de.msgid <> ''
+
+or the same here:
+
+    SELECT msgstr
+    FROM   de
+    WHERE  msgid <> ''
+
 =head1 DESCRIPTION
 
 The DBD::PO module is yet another driver for the DBI
@@ -662,41 +699,6 @@ available on platforms. Using flock() is disabled on MacOS and Windows
 95: There's no locking at all (perhaps not so important on these
 operating systems, as they are for single users anyways).
 
-In case of join tables, SQL::Statement does not allow a file suffix.
-
-This is OK:
-
-    SELECT msgstr
-    FROM   de.po
-    WHERE  msgid <> ''
-
-This is not OK:
-
-    SELECT     de.po.msgstr, ru.po.msgstr
-    FROM       de.po
-    INNER JOIN ru.po
-    ON         de.po.msgid = ru.po.msgid
-    WHERE      de.po.msgid <> ''
-
-This is not OK too:
-
-    SELECT     t1.msgstr, t2.msgstr
-    FROM       de.po AS t1
-    INNER JOIN ru.po AS t2
-    ON         t1.msgid = t2.msgid
-    WHERE      t1.msgid <> ''
-
-This is OK now but tables were renamed:
-
-    SELECT     de.msgstr, ru.msgstr
-    FROM       de
-    INNER JOIN ru
-    ON         de.msgid = ru.msgid
-    WHERE      de.msgid <> ''
-
-The example 04_join.pl of this distribution
-shows the solution as robust workaround.
-
 =head1 SEE ALSO
 
 DBI
@@ -721,7 +723,7 @@ Steffen Winkler
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (c) 2008,
+Copyright (c) 2008 - 2009,
 Steffen Winkler
 C<< <steffenw at cpan.org> >>.
 All rights reserved.

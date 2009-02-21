@@ -3,7 +3,9 @@ package Test::DBD::PO::Defaults;
 use strict;
 use warnings;
 
-our $VERSION = '2.02';
+#use Carp qw(confess); $SIG{__DIE__} = sub {confess @_};
+
+our $VERSION = '2.03';
 
 use parent qw(Exporter);
 our @EXPORT_OK = qw(
@@ -40,7 +42,7 @@ our @EXPORT_OK = qw(
 
 use Carp qw(croak);
 use English qw(-no_match_vars $OS_ERROR $EVAL_ERROR $INPUT_RECORD_SEPARATOR);
-use Cwd;
+use Cwd qw(getcwd);
 use Socket qw($LF $CRLF);
 
 our $TRACE = 1;
@@ -107,13 +109,13 @@ __END__
 
 Test::DBD::PO::Defaults - Some defaults to run tests for module DBD::PO
 
-$Id: Defaults.pm 312 2008-12-17 21:01:23Z steffenw $
+$Id: Defaults.pm 333 2009-02-21 07:23:51Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/Test/DBD/PO/Defaults.pm $
 
 =head1 VERSION
 
-2.02
+2.03
 
 =head1 SYNOPSIS
 

@@ -1,5 +1,5 @@
 #!perl
-# $Id: 04_join.pl 315 2008-12-17 21:09:23Z steffenw $
+# $Id: 04_join.pl 324 2009-02-12 07:49:29Z steffenw $
 
 use strict;
 use warnings;
@@ -16,13 +16,11 @@ our $PATH;
 
 my $path = $PATH
            || q{.};
-my $table1 = 'de';
-my $table2 = 'ru';
-my $table3 = 'de_to_ru';
+my @table = qw(de ru de_to_ru);
 
 # write a file to disk only
 {
-    my $file_name = "$path/$table1.po";
+    my $file_name = "$path/$table[0].po";
     open my $file, '>', $file_name ## no critic (BriefOpen)
         or croak "Can't open file $file_name: $OS_ERROR";
     print {$file} <<'EOT' or croak "Can't write file $file_name: $OS_ERROR";
@@ -46,7 +44,7 @@ EOT
 
 # write a file to disk only
 {
-    my $file_name = "$path/$table2.po";
+    my $file_name = "$path/$table[1].po";
     open my $file, '>', $file_name ## no critic (BriefOpen)
         or croak "Can't open file $file_name: $OS_ERROR";
     print {$file} <<'EOT' or croak "Can't write file $file_name: $OS_ERROR";
@@ -78,10 +76,13 @@ my $dbh = DBI->connect(
         PrintError => 0,
     },
 ) or croak 'Cannot connect: ' . DBI->errstr();
+for (@table) {
+    $dbh->{po_tables}->{$_} = {file => "$_.po"};
+}
 
 # create the joined po file (table)
 $dbh->do(<<"EOT");
-    CREATE TABLE $table3.po
+    CREATE TABLE $table[2]
     (
         msgid  VARCHAR,
         msgstr VARCHAR
@@ -90,7 +91,7 @@ EOT
 
 # prepare to write the joined po file (table)
 my $sth_insert = $dbh->prepare(<<"EOT");
-    INSERT INTO $table3.po
+    INSERT INTO $table[2]
     (msgid, msgstr)
     VALUES (?, ?)
 EOT
@@ -104,21 +105,14 @@ $sth_insert->execute(
     ),
 );
 
-# Join table can not handle "filename.suffix" as table name
-# but "filename" is ok.
-cut_file_name_suffix();
-
 # require joined data
 my $sth_select = $dbh->prepare(<<"EOT");
-    SELECT $table1.msgstr, $table2.msgstr
-    FROM $table1
-    INNER JOIN $table2 ON $table1.msgid = $table2.msgid
-    WHERE $table1.msgid <> ''
+    SELECT $table[0].msgstr, $table[1].msgstr
+    FROM $table[0]
+    INNER JOIN $table[1] ON $table[0].msgid = $table[1].msgid
+    WHERE $table[0].msgid <> ''
 EOT
 $sth_select->execute();
-
-# rename back the po files
-restore_file_name_suffix();
 
 # get the joined data
 while ( my @data = $sth_select->fetchrow_array() ) {
@@ -127,22 +121,3 @@ while ( my @data = $sth_select->fetchrow_array() ) {
 
 # all done
 $dbh->disconnect();
-
-sub cut_file_name_suffix {
-    rename "$path/$table1.po", "$path/$table1";
-    rename "$path/$table2.po", "$path/$table2";
-
-    return;
-}
-
-sub restore_file_name_suffix {
-    rename "$path/$table1", "$path/$table1.po";
-    rename "$path/$table2", "$path/$table2.po";
-
-    return;
-}
-
-# do it in case of error too
-END {
-    restore_file_name_suffix();
-}

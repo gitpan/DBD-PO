@@ -1,5 +1,5 @@
 #!perl
-# $Id: 02_read_using_Locale-Maketext.pl 315 2008-12-17 21:09:23Z steffenw $
+# $Id: 02_read_using_Locale-Maketext.pl 326 2009-02-18 22:37:10Z steffenw $
 
 use strict;
 use warnings;
@@ -7,7 +7,7 @@ use warnings;
 # create a package for a lexicon
 # here inplace
 {
-    package Example::L10N; ## no critic (FilenameMatchesPackage);
+    package Example::L10N; ## no critic (FilenameMatchesPackage)
 
     use strict;
     use warnings;
