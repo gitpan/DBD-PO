@@ -245,7 +245,7 @@ sub write_entry { ## no critic (ExcessComplexity)
     return $self;
 }
 
-sub read_entry { ## no critic (ExcessComplexity)
+sub read_entry {
     my ($self, $file_name, $file_handle) = @_;
 
     if (! defined $self->{line_number}) {
@@ -347,7 +347,7 @@ __END__
 
 DBD::PO::Text::PO - read or write a PO file entry by entry
 
-$Id: PO.pm 289 2008-11-09 13:10:28Z steffenw $
+$Id: PO.pm 339 2009-03-01 11:53:16Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/Text/PO.pm $
 

@@ -1,4 +1,4 @@
-package DBD::PO::dr; # DRIVER
+package DBD::PO::dr; ## no critic (Capitalization)
 
 use strict;
 use warnings;
@@ -53,7 +53,7 @@ __END__
 
 DBD::PO::dr - driver class for DBD::PO
 
-$Id: dr.pm 289 2008-11-09 13:10:28Z steffenw $
+$Id: dr.pm 340 2009-03-01 16:22:05Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/dr.pm $
 
@@ -103,7 +103,7 @@ Steffen Winkler
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (c) 2008,
+Copyright (c) 2008 - 2009,
 Steffen Winkler
 C<< <steffenw at cpan.org> >>.
 All rights reserved.

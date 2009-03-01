@@ -1,4 +1,4 @@
-package DBD::PO::st;
+package DBD::PO::st; ## no critic (Capitalization)
 
 use strict;
 use warnings;
@@ -18,7 +18,7 @@ __END__
 
 DBD::PO::st - statement class for DBD::PO
 
-$Id: st.pm 246 2008-10-03 14:02:05Z steffenw $
+$Id: st.pm 339 2009-03-01 11:53:16Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/st.pm $
 

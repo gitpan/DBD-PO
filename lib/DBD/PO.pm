@@ -3,7 +3,7 @@ package DBD::PO;
 use strict;
 use warnings;
 
-our $VERSION     = '2.03';
+our $VERSION = '2.04';
 our $ATTRIBUTION = __PACKAGE__
                    . ' by Steffen Winkler <steffenw at cpan.org>';
 
@@ -30,13 +30,13 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 328 2009-02-21 07:06:02Z steffenw $
+$Id: PO.pm 340 2009-03-01 16:22:05Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
 =head1 VERSION
 
-2.03
+2.04
 
 =head1 SYNOPSIS
 

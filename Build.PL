@@ -4,12 +4,13 @@ use warnings;
 use Module::Build;
 
 Module::Build->new(
-    module_name        => 'DBD::PO',
-    license            => 'perl',
-    dist_abstract      => 'DBD::PO - DBI driver for PO files',
-    dist_author        => 'Steffen Winkler <steffenw at cpan.org>',
-    dist_version_from  => 'lib/DBD/PO.pm',
-    requires           => {
+    module_name       => 'DBD::PO',
+    license           => 'perl',
+    dist_abstract     => 'DBD::PO - DBI driver for PO files',
+    dist_author       => 'Steffen Winkler <steffenw at cpan.org>',
+    dist_version_from => 'lib/DBD/PO.pm',
+    requires          => {
+        version            => 0,
         parent             => 0,
         DBI                => 0, # for DBD::File
         'SQL::Statement'   => 0, # for SQL::Parser

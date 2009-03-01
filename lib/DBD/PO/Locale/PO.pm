@@ -3,7 +3,7 @@ package DBD::PO::Locale::PO;
 use strict;
 use warnings;
 
-our $VERSION = '0.21.03';
+use version; our $VERSION = qv(0.21.4);
 
 use Carp qw(croak);
 use English qw(-no_match_vars $EVAL_ERROR $OS_ERROR);
@@ -626,13 +626,13 @@ __END__
 
 DBD::PO::Locale::PO - Perl module for manipulating .po entries from GNU gettext
 
-$Id: PO.pm 301 2008-11-29 21:43:39Z steffenw $
+$Id: PO.pm 340 2009-03-01 16:22:05Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/Locale/PO.pm $
 
 =head1 VERSION
 
-0.21.02
+v0.21.4
 
 =head1 SYNOPSIS
 
@@ -984,7 +984,7 @@ of Module L<Locale::PO>, version '0.21'.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (c) 2008,
+Copyright (c) 2008 - 2009,
 Steffen Winkler
 C<< <steffenw at cpan.org> >>.
 All rights reserved.

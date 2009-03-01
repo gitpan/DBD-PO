@@ -1,9 +1,9 @@
-package DBD::PO::db; # DATABASE
+package DBD::PO::db; ## no critic (Capitalization)
 
 use strict;
 use warnings;
 
-our $VERSION = '2.02';
+our $VERSION = '2.04';
 
 use DBD::File;
 use parent qw(-norequire DBD::File::db);
@@ -18,56 +18,59 @@ use DBD::PO::Text::PO qw($EOL_DEFAULT $SEPARATOR_DEFAULT $CHARSET_DEFAULT);
 
 our $imp_data_size = 0; ## no critic (PackageVars)
 
-my @header = (
-    [ project_id_version        => 'Project-Id-Version: %s'        ],
-    [ report_msgid_bugs_to      => 'Report-Msgid-Bugs-To: %s <%s>' ],
-    [ pot_creation_date         => 'POT-Creation-Date: %s'         ],
-    [ po_revision_date          => 'PO-Revision-Date: %s'          ],
-    [ last_translator           => 'Last-Translator: %s <%s>'      ],
-    [ language_team             => 'Language-Team: %s <%s>'        ],
-    [ mime_version              => 'MIME-Version: %s'              ],
-    [ content_type              => 'Content-Type: %s; charset=%s'  ],
-    [ content_transfer_encoding => 'Content-Transfer-Encoding: %s' ],
-    [ plural_forms              => 'Plural-Forms: %s'              ],
-    [ extended                  => '%s: %s'                        ],
-);
-my @HEADER_KEYS     = map {$_->[0]} @header;
-my @HEADER_FORMATS  = map {$_->[1]} @header;
-my @HEADER_DEFAULTS = (
-    undef,
-    undef,
-    undef,
-    undef,
-    undef,
-    undef,
-   '1.0',
-    ['text/plain', undef],
-    '8bit',
-    undef,
-    undef,
-);
-my @HEADER_REGEX = (
-    qr{\A \QProject-Id-Version:\E        \s* (.*) \s* \z}xmsi,
-    [
-        qr{\A \QReport-Msgid-Bugs-To:\E  \s* ([^<]*) \s+ < ([^>]*) > \s* \z}xmsi,
-        qr{\A \QReport-Msgid-Bugs-To:\E  \s* (.*) () \s* \z}xmsi,
-    ],
-    qr{\A \QPOT-Creation-Date:\E         \s* (.*) \s* \z}xmsi,
-    qr{\A \QPO-Revision-Date:\E          \s* (.*) \s* \z}xmsi,
-    [
-        qr{\A \QLast-Translator:\E       \s* ([^<]*) \s+ < ([^>]*) > \s* \z}xmsi,
-        qr{\A \QLast-Translator:\E       \s* (.*) () \s* \z}xmsi,
-    ],
-    [
-        qr{\A \QLanguage-Team:\E         \s* ([^<]*) \s+ < ([^>]*) > \s* \z}xmsi,
-        qr{\A \QLanguage-Team:\E         \s* (.*) () \s* \z}xmsi,
-    ],
-    qr{\A \QMIME-Version:\E              \s* (.*) \s* \z}xmsi,
-    qr{\A \QContent-Type:\E              \s* ([^;]*); \s* charset=(\S*) \s* \z}xmsi,
-    qr{\A \QContent-Transfer-Encoding:\E \s* (.*) \s* \z}xmsi,
-    qr{\A \QPlural-Forms:\E              \s* (.*) \s* \z}xmsi,
-    qr{\A ([^:]*) :                      \s* (.*) \s* \z}xms,
-);
+my (@HEADER_KEYS, @HEADER_FORMATS, @HEADER_DEFAULTS, @HEADER_REGEX);
+{
+    my @header = (
+        [ project_id_version        => 'Project-Id-Version: %s'        ],
+        [ report_msgid_bugs_to      => 'Report-Msgid-Bugs-To: %s <%s>' ],
+        [ pot_creation_date         => 'POT-Creation-Date: %s'         ],
+        [ po_revision_date          => 'PO-Revision-Date: %s'          ],
+        [ last_translator           => 'Last-Translator: %s <%s>'      ],
+        [ language_team             => 'Language-Team: %s <%s>'        ],
+        [ mime_version              => 'MIME-Version: %s'              ],
+        [ content_type              => 'Content-Type: %s; charset=%s'  ],
+        [ content_transfer_encoding => 'Content-Transfer-Encoding: %s' ],
+        [ plural_forms              => 'Plural-Forms: %s'              ],
+        [ extended                  => '%s: %s'                        ],
+    );
+    @HEADER_KEYS     = map {$_->[0]} @header;
+    @HEADER_FORMATS  = map {$_->[1]} @header;
+    @HEADER_DEFAULTS = (
+        undef,
+        undef,
+        undef,
+        undef,
+        undef,
+        undef,
+       '1.0',
+        ['text/plain', undef],
+        '8bit',
+        undef,
+        undef,
+    );
+    @HEADER_REGEX = (
+        qr{\A \QProject-Id-Version:\E        \s* (.*) \s* \z}xmsi,
+        [
+            qr{\A \QReport-Msgid-Bugs-To:\E  \s* ([^<]*) \s+ < ([^>]*) > \s* \z}xmsi,
+            qr{\A \QReport-Msgid-Bugs-To:\E  \s* (.*) () \s* \z}xmsi,
+        ],
+        qr{\A \QPOT-Creation-Date:\E         \s* (.*) \s* \z}xmsi,
+        qr{\A \QPO-Revision-Date:\E          \s* (.*) \s* \z}xmsi,
+        [
+            qr{\A \QLast-Translator:\E       \s* ([^<]*) \s+ < ([^>]*) > \s* \z}xmsi,
+            qr{\A \QLast-Translator:\E       \s* (.*) () \s* \z}xmsi,
+        ],
+        [
+            qr{\A \QLanguage-Team:\E         \s* ([^<]*) \s+ < ([^>]*) > \s* \z}xmsi,
+            qr{\A \QLanguage-Team:\E         \s* (.*) () \s* \z}xmsi,
+        ],
+        qr{\A \QMIME-Version:\E              \s* (.*) \s* \z}xmsi,
+        qr{\A \QContent-Type:\E              \s* ([^;]*); \s* charset=(\S*) \s* \z}xmsi,
+        qr{\A \QContent-Transfer-Encoding:\E \s* (.*) \s* \z}xmsi,
+        qr{\A \QPlural-Forms:\E              \s* (.*) \s* \z}xmsi,
+        qr{\A ([^:]*) :                      \s* (.*) \s* \z}xms,
+    );
+}
 
 my $maketext_to_gettext_scalar = sub {
     my $string = shift;
@@ -297,7 +300,6 @@ sub split_header_msgstr { ## no critic (ArgUnpacking)
                     ? $dbh->FETCH('separator')
                     : $SEPARATOR_DEFAULT;
     my @cols;
-    my $index = 0;
     my @lines = split m{\Q$separator\E}xms, $msgstr;
     LINE:
     while (1) {
@@ -360,12 +362,12 @@ sub get_header_msgstr_data { ## no critic (ArgUnpacking)
             type      => SCALAR | ARRAYREF,
             callbacks => {
                 check_keys => sub {
-                    my $key = shift;
-                    if (ref $key eq 'ARRAY') {
+                    my $check_key = shift;
+                    if (ref $check_key eq 'ARRAY') {
                         return 1;
                     }
                     else {
-                        return $key =~ $valid_keys_regex;
+                        return $check_key =~ $valid_keys_regex;
                     }
                 },
             },
@@ -402,13 +404,13 @@ __END__
 
 DBD::PO::db - database class for DBD::PO
 
-$Id: db.pm 312 2008-12-17 21:01:23Z steffenw $
+$Id: db.pm 339 2009-03-01 11:53:16Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/db.pm $
 
 =head1 VERSION
 
-2.02
+2.04
 
 =head1 SYNOPSIS
 
@@ -472,7 +474,7 @@ Steffen Winkler
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (c) 2008,
+Copyright (c) 2008 - 2009,
 Steffen Winkler
 C<< <steffenw at cpan.org> >>.
 All rights reserved.

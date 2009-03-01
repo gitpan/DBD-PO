@@ -1,13 +1,13 @@
 #!perl
-# $Id: 02_read_using_Locale-Maketext.pl 326 2009-02-18 22:37:10Z steffenw $
+# $Id: 02_read_using_Locale-Maketext.pl 338 2009-03-01 07:43:36Z steffenw $
 
 use strict;
 use warnings;
 
 # create a package for a lexicon
 # here inplace
-{
-    package Example::L10N; ## no critic (FilenameMatchesPackage)
+BEGIN {
+    package Example::L10N;
 
     use strict;
     use warnings;

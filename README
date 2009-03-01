@@ -1,4 +1,4 @@
-DBD::PO version 2.03
+DBD::PO version 2.04
 ====================
 
 This is a driver to read/write PO files.
