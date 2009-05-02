@@ -3,7 +3,7 @@ package DBD::PO::db; ## no critic (Capitalization)
 use strict;
 use warnings;
 
-our $VERSION = '2.04';
+our $VERSION = '2.05';
 
 use DBD::File;
 use parent qw(-norequire DBD::File::db);
@@ -205,6 +205,10 @@ sub _hash2array {
     return $array_data;
 };
 
+sub get_all_header_keys {
+    return [keys %hash2array];
+}
+
 sub build_header_msgstr { ## no critic (ArgUnpacking)
     my ($dbh, $anything) = validate_pos(
         @_,
@@ -404,13 +408,13 @@ __END__
 
 DBD::PO::db - database class for DBD::PO
 
-$Id: db.pm 339 2009-03-01 11:53:16Z steffenw $
+$Id: db.pm 380 2009-05-02 07:05:20Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/db.pm $
 
 =head1 VERSION
 
-2.04
+2.05
 
 =head1 SYNOPSIS
 
@@ -425,6 +429,8 @@ database class for DBD::PO
 =head2 method maketext_to_gettext
 
 =head2 method quote
+
+=head2 method get_all_header_keys
 
 =head2 method build_header_msgstr
 

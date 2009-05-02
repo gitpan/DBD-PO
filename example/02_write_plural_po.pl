@@ -1,5 +1,5 @@
 #!perl
-# $Id: 01_write.pl 378 2009-05-02 06:29:51Z steffenw $
+# $Id: 01_write.pl 315 2008-12-17 21:09:23Z steffenw $
 
 use strict;
 use warnings;
@@ -7,17 +7,21 @@ use warnings;
 our $VERSION = 0;
 
 use Carp qw(croak);
+use File::Path qw(mkpath);
 require DBI;
+require DBD::PO; DBD::PO->init(':plural');
 
 # for test examples only
-our $PATH;
-our $TABLE_2X;
-() = eval 'use Test::DBD::PO::Defaults qw($PATH $TABLE_2X)'; ## no critic (StringyEval InterpolationOfMetachars)
+our $PATH_P;
+our $TABLE_2P;
+() = eval 'use Test::DBD::PO::Defaults qw($PATH_P $TABLE_2P)'; ## no critic (StringyEval InterpolationOfMetachars)
 
-my $path  = $PATH
-            || q{.};
-my $table = $TABLE_2X
-            || 'table_xx.po'; # for langueage xx
+my $path  = $PATH_P
+            || q{./LocaleData/de/LC_MESSAGES};
+my $table = $TABLE_2P
+            || 'table_plural.po';
+
+mkpath $path;
 
 # connect to database (directory)
 my $dbh = DBI->connect(
@@ -34,20 +38,26 @@ my $dbh = DBI->connect(
 $dbh->do(<<"EOT");
     CREATE TABLE
         $table (
-            comment    VARCHAR,
-            automatic  VARCHAR,
-            reference  VARCHAR,
-            obsolete   INTEGER,
-            fuzzy      INTEGER,
-            msgid      VARCHAR,
-            msgstr     VARCHAR
+            comment      VARCHAR,
+            automatic    VARCHAR,
+            reference    VARCHAR,
+            obsolete     INTEGER,
+            fuzzy        INTEGER,
+            msgid        VARCHAR,
+            msgid_plural VARCHAR,
+            msgstr_0     VARCHAR,
+            msgstr_1     VARCHAR
         )
 EOT
 
-# build a default header
+# build a header
 my $header_msgstr = $dbh->func(
-    undef,                 # minimized
-    'build_header_msgstr', # function name
+    {
+        # an English/German example
+        'Plural-Forms' => 'nplurals=2; plural=n != 1;',
+    },
+    # function name
+    'build_header_msgstr',
 );
 
 # write the header (first row)
@@ -65,8 +75,11 @@ EOT
 my $sth = $dbh->prepare(<<"EOT");
     INSERT INTO $table (
         msgid,
-        msgstr
-    ) VALUES (?, ?)
+        msgid_plural,
+        msgstr,
+        msgstr_0,
+        msgstr_1
+    ) VALUES (?, ?, ?, ?, ?)
 EOT
 
 # declare some data only
@@ -80,22 +93,21 @@ my @data = (
         msgstr => "text2 translated\n2nd line of text2",
     },
     {
-        msgid  => 'text3 original %1',
-        msgstr => 'text3 translated %1',
+        msgid  => 'text5 original {text}',
+        msgstr => 'text5 translated {text}',
     },
     {
-        msgid  => 'text4 original [quant,_1,o_one,o_more,o_nothing]',
-        msgstr => 'text4 translated [quant,_1,t_one,t_more,t_nothing]',
+        msgid        => 'text6 original {num} singular',
+        msgid_plural => 'text6 original {num} plural',
+        msgstr_0     => 'text6 translated {num} singular',
+        msgstr_1     => 'text6 translated {num} plural',
     },
 );
 
 # write all the data into the po file (table)
 for my $data (@data) {
     $sth->execute(
-        $dbh->func(
-            @{$data}{qw(msgid msgstr)},
-            'maketext_to_gettext',
-        ),
+        @{$data}{qw(msgid msgid_plural msgstr msgstr_0 msgstr_1)},
     );
 };
 

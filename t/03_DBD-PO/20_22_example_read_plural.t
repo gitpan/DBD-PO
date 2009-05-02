@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::DBD::PO::Defaults qw(run_example $DROP_TABLE $FILE_2X $TABLE_2X);
+use Test::DBD::PO::Defaults qw(run_example $DROP_TABLE $FILE_2P $TABLE_2P);
 use Test::More;
 
 $ENV{TEST_EXAMPLE} or plan(
@@ -13,9 +13,9 @@ $ENV{TEST_EXAMPLE} or plan(
 plan(tests => 2);
 
 is(
-    run_example('03_read.pl'),
+    run_example('22_read_plural.pl'),
     q{},
-    'run 03_read.pl',
+    'run 22_read_plural.pl',
 );
 
 # drop table
@@ -23,9 +23,9 @@ SKIP: {
     skip('delete file', 1)
         if ! $DROP_TABLE;
 
-    unlink $FILE_2X;
+    unlink $FILE_2P;
     ok(
-        ! -e $FILE_2X,
-        "$TABLE_2X not exists",
+        ! -e $FILE_2P,
+        "$TABLE_2P not exists",
     );
 }

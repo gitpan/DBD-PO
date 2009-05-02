@@ -3,7 +3,7 @@ package DBD::PO;
 use strict;
 use warnings;
 
-our $VERSION = '2.04';
+our $VERSION = '2.05';
 our $ATTRIBUTION = __PACKAGE__
                    . ' by Steffen Winkler <steffenw at cpan.org>';
 
@@ -22,6 +22,10 @@ sub init {
     return DBD::PO::Text::PO->init(@params);
 }
 
+sub get_all_header_keys {
+    return DBD::PO::db->get_all_header_keys();
+}
+
 1;
 
 __END__
@@ -30,13 +34,13 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 340 2009-03-01 16:22:05Z steffenw $
+$Id: PO.pm 380 2009-05-02 07:05:20Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
 =head1 VERSION
 
-2.04
+2.05
 
 =head1 SYNOPSIS
 
@@ -200,7 +204,8 @@ or C<DBD::PO->init(':all');> early.
 
 =back
 
-..._format, msgstr_0 .. msgstr_3 and previous_... are normally switched off.
+..._format, msgid_plural, msgstr_0 .. msgstr_3 and previous_...
+are normally switched off.
 See method init.
 
     $dbh->do(<<'EOT');
@@ -242,47 +247,7 @@ Note that the default encoding is nothing, not 'utf-8'.
         'build_header_msgstr',
     );
 
-=head4 full example (Do not use! Use the named one!)
-
-    my $header_msgstr = $dbh->func(
-        [
-            # project
-            'Project name',
-            [
-                'Bug Reporter',
-                'report.msgid.bugs.to@example.org',
-            ],
-            # ISO 8601 time format like [YYYY]-[MM]-[DD]T[hh]::[mm]:[ss]Z
-            'the POT creation date',
-            'the PO revision date',
-            # last translator name and mail address
-            [
-                'Steffen Winkler',
-                'steffenw@example.org',
-            ],
-            # language team, name and mail address
-            [
-                'MyTeam',
-                'cpan@example.org',
-            ],
-            # undef to accept the defaut settings
-            undef, # mime version (1.0)
-            undef, # arrayref of content type (text/plain) and charset
-                   # 'iso-8859-1' or given as po_charset at the connect method
-            undef, # content transfer encoding (8bit)
-            undef, # plural forms
-            # place here pairs for extra parameters
-            [qw(
-                X-Poedit-Language      German
-                X-Poedit-Country       GERMANY
-                X-Poedit-SourceCharset utf-8
-            )],
-        ],
-        # function name
-        'build_header_msgstr',
-    );
-
-=head4 full example using named parameters
+=head4 full example
 
     my $header_msgstr = $dbh->func(
         {
@@ -339,7 +304,7 @@ EOT
 
 =head2 write a row
 
-=head2 without Locale::Maketext placeholders (not typical)
+=head2 without Locale::Maketext placeholders
 
     my $sth = $dbh->prepare(<<'EOT');
         INSERT INTO table.po (
@@ -404,9 +369,7 @@ EOT
 
 =head2 read the header
 
-=head3 easy
-
-=head4 read only 1 header information
+=head3 read only 1 header information
 
 Scalar to scalar mapping.
 
@@ -416,7 +379,7 @@ Scalar to scalar mapping.
         'get_header_msgstr_data',
     );
 
-=head4 read more header informations
+=head3 read more header informations
 
 Arrayref to arrayref mapping.
 
@@ -426,65 +389,6 @@ Arrayref to arrayref mapping.
         'get_header_msgstr_data',
     );
     my ($charset, $project_id_version) = @{$array_ref};
-
-=head3 not easy (Do not use!)
-
-    # read the header msgstr
-    $sth = $dbh->prepare(<<'EOT');
-        SELECT msgstr
-        FROM   table.po
-        WHERE  msgid = ''
-    EOT
-    $sth->execute();
-    ($header_msgstr) = $sth->fetchrow_array();
-
-    # extract the header data
-    my $header_struct = $dbh->func(
-        $header_msgstr,
-        # function name
-        'split_header_msgstr',
-    );
-
-    # get values by name
-    my $charset = $dhh->func(
-        $header_struct,
-        'charset',
-        'get_header_msgstr_data',
-    );
-
-=head3 not easy, implicit call of split_header_msgstr (Do not use!)
-
-    # read the header msgstr
-    $sth = $dbh->prepare(<<'EOT');
-        SELECT msgstr
-        FROM   table.po
-        WHERE  msgid = ''
-    EOT
-    $sth->execute();
-    ($header_msgstr) = $sth->fetchrow_array();
-
-    # get values by name
-    my $charset = $dhh->func(
-        $header_msgstr,
-        'charset',
-        'get_header_msgstr_data',
-    );
-
-=head3 not easy, implicit SQL call (Do not use!)
-
-    # extract the header data
-    my $header_struct = $dbh->func(
-        {table => 'table_name'},
-        # function name
-        'split_header_msgstr',
-    );
-
-    # get values by name
-    my $charset = $dhh->func(
-        $header_struct,
-        'charset',
-        'get_header_msgstr_data',
-    );
 
 =head2 read a row
 
@@ -644,6 +548,30 @@ this switch allows to read the damaged file.
 
 =back
 
+=head2 get_all_header_keys
+
+Use this method to show all header data for debugging.
+
+    $all_header_keys_ref = DBD::PO->get_all_header_keys();
+
+    my $header_data_ref = $dbh->func(
+        {table => $table},        # wich table
+        $all_header_keys_ref,     # what to get
+        'get_header_msgstr_data', # function name
+    );
+
+or
+
+    $all_header_keys_ref = $dbh->func(
+        'get_all_header_keys', # function_name
+    );
+
+    my $header_data_ref = $dbh->func(
+        {table => $table},        # wich table
+        $all_header_keys_ref,     # what to get
+        'get_header_msgstr_data', # function name
+    );
+
 =head1 DIAGNOSTICS
 
 see DBI
@@ -711,11 +639,13 @@ L<Locale::PO> has bugs, more than documented
 
 L<DBD::CSV> my guideline
 
-L<Locale::Maketext::Lexicon> see xgettext.pl
-
 L<http://www.gnu.org/software/gettext/manual/gettext.html>
 
 L<http://en.wikipedia.org/wiki/Gettext>
+
+L<http://rassie.org/archives/247> The choice of the right module for the translation.
+
+L<Locale::Maketext::Lexicon> see xgettext.pl
 
 =head1 AUTHOR
 

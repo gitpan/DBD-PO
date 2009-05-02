@@ -1,5 +1,5 @@
 #!perl
-# $Id: 02_read_using_Locale-Maketext.pl 338 2009-03-01 07:43:36Z steffenw $
+# $Id: 11_read_using_Locale-Maketext.pl 378 2009-05-02 06:29:51Z steffenw $
 
 use strict;
 use warnings;

@@ -1,6 +1,6 @@
 ---
 name: DBD-PO
-version: 2.04
+version: 2.05
 author:
   - 'Steffen Winkler <steffenw at cpan.org>'
 abstract: 'DBD::PO - DBI driver for PO files'
@@ -30,7 +30,7 @@ recommends:
 provides:
   DBD::PO:
     file: lib/DBD/PO.pm
-    version: 2.04
+    version: 2.05
   DBD::PO::Locale::PO:
     file: lib/DBD/PO/Locale/PO.pm
     version: v0.21.4
@@ -45,7 +45,7 @@ provides:
     version: 2.00
   DBD::PO::db:
     file: lib/DBD/PO/db.pm
-    version: 2.04
+    version: 2.05
   DBD::PO::dr:
     file: lib/DBD/PO/dr.pm
     version: 2.00
@@ -54,7 +54,7 @@ provides:
     version: 1.00
   Test::DBD::PO::Defaults:
     file: lib/Test/DBD/PO/Defaults.pm
-    version: 2.03
+    version: 2.05
 generated_by: Module::Build version 0.32
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html

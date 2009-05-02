@@ -1,5 +1,5 @@
 #!perl
-# $Id: 03_read.pl 315 2008-12-17 21:09:23Z steffenw $
+# $Id: 21_read.pl 347 2009-04-27 18:15:05Z steffenw $
 
 use strict;
 use warnings;
@@ -7,18 +7,19 @@ use warnings;
 our $VERSION = 0;
 
 use Carp qw(croak);
-use DBI ();
-use Data::Dumper ();
+require DBI;
+require DBD::PO; DBD::PO->init(':plural');
+require Data::Dumper;
 
 # for test examples only
-our $PATH;
-our $TABLE_2X;
-() = eval 'use Test::DBD::PO::Defaults qw($PATH $TABLE_2X)'; ## no critic (StringyEval InterpolationOfMetachars)
+our $PATH_P;
+our $TABLE_2P;
+() = eval 'use Test::DBD::PO::Defaults qw($PATH_P $TABLE_2P)'; ## no critic (StringyEval InterpolationOfMetachars)
 
-my $path  = $PATH
-            || q{.};
-my $table = $TABLE_2X
-            || 'table_xx.po'; # for langueage xx
+my $path  = $PATH_P
+            || q{./LocaleData/de/LC_MESSAGES};
+my $table = $TABLE_2P
+            || 'table_plural.po';
 
 my $dbh;
 # Read the charset from the po file (table)
@@ -45,20 +46,13 @@ for (1 .. 2) {
 # get the header (first row) from po file (table)
 # header msgid is always empty but not NULL
 {
-    my ($header_msgstr) = $dbh->selectrow_array(<<"EOT");
-        SELECT msgstr
-        FROM   $table
-        WHERE  msgid = ''
-EOT
-
-    # get some internals
-    my $header_struct = $dbh->func(
-        $header_msgstr,
-        'split_header_msgstr', # function name
+    my $header_data_ref = $dbh->func(
+        {table => $table},              # wich table
+        DBD::PO->get_all_header_keys(), # what to get
+        'get_header_msgstr_data',       # function name
     );
 
-    # and show all
-    print Data::Dumper->new([$header_struct], [qw(header_struct)]) ## no critic (LongChainsOfMethodCalls CheckedSyscalls)
+    print Data::Dumper->new([@{$header_data_ref}], [DBD::PO->get_all_header_keys()]) ## no critic (LongChainsOfMethodCalls CheckedSyscalls)
                       ->Quotekeys(0)
                       ->Useqq(1)
                       ->Dump();
@@ -68,7 +62,7 @@ EOT
 # row msgid is never empty
 {
     my $sth = $dbh->prepare(<<"EOT");
-        SELECT msgid, msgstr
+        SELECT msgid, msgid_plural, msgstr, msgstr_0, msgstr_1
         FROM   $table
         WHERE  msgid <> ''
 EOT

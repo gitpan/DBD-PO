@@ -13,9 +13,9 @@ $ENV{TEST_EXAMPLE} or plan(
 plan(tests => 7);
 
 is(
-    run_example('04_join.pl'),
+    run_example('31_join.pl'),
     q{},
-    'run 04_join.pl',
+    'run 31_join.pl',
 );
 
 my @files = map {"$PATH/$_.po"} qw(de ru de_to_ru);

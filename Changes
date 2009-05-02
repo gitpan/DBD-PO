@@ -1,5 +1,9 @@
 Revision history for Perl extension DBD::PO.
 
+2.05  Sat May 02 18:00:00 2009
+- new examples for Locale::TextDomain
+- new method get_all_header_keys for better debugging
+
 2.04  Sun Mar 01 18:00:00 2009
 - 2nd example fixed
 

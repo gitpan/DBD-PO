@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::DBD::PO::Defaults qw(run_example $DROP_TABLE $FILE_2X $TABLE_2X);
+use Test::DBD::PO::Defaults qw(run_example);
 use Test::More;
 
 $ENV{TEST_EXAMPLE} or plan(
@@ -13,7 +13,7 @@ $ENV{TEST_EXAMPLE} or plan(
 plan(tests => 1);
 
 is(
-    run_example('02_read_using_Locale-Maketext.pl'),
+    run_example('11_read_using_Locale-Maketext.pl'),
     q{},
-    'run 02_read_using_Locale-Maketext.pl',
+    'run 11_read_using_Locale-Maketext.pl',
 );

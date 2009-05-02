@@ -5,7 +5,7 @@ use warnings;
 
 #use Carp qw(confess); $SIG{__DIE__} = sub {confess @_};
 
-our $VERSION = '2.03';
+our $VERSION = '2.05';
 
 use parent qw(Exporter);
 our @EXPORT_OK = qw(
@@ -14,6 +14,8 @@ our @EXPORT_OK = qw(
 
     $UNTAINT_FILENAME_PATTERN
     $PATH
+    $PATH_P
+    $PATH_M
     $SEPARATOR
     $EOL
 
@@ -24,6 +26,8 @@ our @EXPORT_OK = qw(
     $TABLE_14
     $TABLE_15
     $TABLE_2X
+    $TABLE_2P
+    $TABLE_2M
 
     $FILE_LOCALE_PO_01
     $FILE_LOCALE_PO_02
@@ -35,6 +39,8 @@ our @EXPORT_OK = qw(
     $FILE_14
     $FILE_15
     $FILE_2X
+    $FILE_2P
+    $FILE_2M
 
     trace_file_name
     run_example
@@ -57,6 +63,8 @@ our $UNTAINT_FILENAME_PATTERN = qr{\A (
 ) \z}xmsi;
 our ($PATH) = getcwd() =~ $UNTAINT_FILENAME_PATTERN;
 $PATH =~ s{\\}{/}xmsg;
+our $PATH_P    = "$PATH/example/LocaleData/de/LC_MESSAGES";
+our $PATH_M    = "$PATH/example/LocaleData/de/LC_MESSAGES";
 our $SEPARATOR = $LF;
 our $EOL       = $CRLF;
 
@@ -70,6 +78,8 @@ our $TABLE_13           = 'dbd_po_charset_?.po';
 our $TABLE_14           = 'dbd_po_quote.po';
 our $TABLE_15           = 'dbd_po_header_msgstr_hash.po';
 our $TABLE_2X           = 'table_de.po';
+our $TABLE_2P           = 'table_plural.po';
+our $TABLE_2M           = 'table_plural.mo';
 
 our $FILE_LOCALE_PO_01 = "$PATH/$TABLE_LOCALE_PO_01";
 our $FILE_LOCALE_PO_02 = "$PATH/$TABLE_LOCALE_PO_02";
@@ -81,6 +91,8 @@ our $FILE_13           = "$PATH/$TABLE_13";
 our $FILE_14           = "$PATH/$TABLE_14";
 our $FILE_15           = "$PATH/$TABLE_15";
 our $FILE_2X           = "$PATH/$TABLE_2X";
+our $FILE_2P           = "$PATH_P/$TABLE_2P";
+our $FILE_2M           = "$PATH_M/$TABLE_2M";
 
 sub trace_file_name {
     my ($number) = (caller 0)[1] =~ m{\b (\d\d) \w+ \. t}xms;
@@ -109,13 +121,13 @@ __END__
 
 Test::DBD::PO::Defaults - Some defaults to run tests for module DBD::PO
 
-$Id: Defaults.pm 333 2009-02-21 07:23:51Z steffenw $
+$Id: Defaults.pm 380 2009-05-02 07:05:20Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/Test/DBD/PO/Defaults.pm $
 
 =head1 VERSION
 
-2.03
+2.05
 
 =head1 SYNOPSIS
 
