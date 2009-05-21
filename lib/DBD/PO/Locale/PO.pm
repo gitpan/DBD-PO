@@ -3,7 +3,7 @@ package DBD::PO::Locale::PO;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.21.4);
+use version; our $VERSION = qv('0.21.4');
 
 use Carp qw(croak);
 use English qw(-no_match_vars $EVAL_ERROR $OS_ERROR);
@@ -626,7 +626,7 @@ __END__
 
 DBD::PO::Locale::PO - Perl module for manipulating .po entries from GNU gettext
 
-$Id: PO.pm 340 2009-03-01 16:22:05Z steffenw $
+$Id: PO.pm 387 2009-05-05 20:33:51Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/Locale/PO.pm $
 
