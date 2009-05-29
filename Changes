@@ -1,5 +1,8 @@
 Revision history for Perl extension DBD::PO.
 
+2.07  Fri May 29 21::00:00 2009
+- bugfix build dependencies
+
 2.06  Thu May 21 08:00:00 2009
 - repair version
 

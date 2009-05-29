@@ -8,7 +8,7 @@ use Test::DBD::PO::Defaults qw($PATH $UNTAINT_FILENAME_PATTERN);
 use Test::More;
 
 $ENV{TEST_AUTHOR}
-or plan skip_all => 'Author test. Set $ENV{TEST_AUTHOR} to a true value to run.';
+    or plan skip_all => 'Author test. Set $ENV{TEST_AUTHOR} to a true value to run.';
 
 my @list;
 find(
@@ -17,8 +17,9 @@ find(
         untaint         => 1,
         wanted          => sub {
             -d and return;
-            $File::Find::name =~ m{/ \.svn / | \.mo \z}xms and return;
-            return if $File::Find::name !~ m{
+            $File::Find::name =~ m{/ \.svn / | \.mo | \.txt \z}xms
+                and return;
+            $File::Find::name !~ m{
                 (
                     (?: /lib/ | /example/ | /t/ )
                     | /Build\.pl \z
@@ -26,7 +27,7 @@ find(
                     | /README \z
                     | /MANIFEST\.SKIP \z
                 )
-            }xms;
+            }xms or return;
             push @list, $File::Find::name;
         },
     },
