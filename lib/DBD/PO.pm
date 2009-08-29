@@ -3,7 +3,7 @@ package DBD::PO;
 use strict;
 use warnings;
 
-our $VERSION = '2.07';
+our $VERSION = '2.08';
 our $ATTRIBUTION = __PACKAGE__
                    . ' by Steffen Winkler <steffenw at cpan.org>';
 
@@ -34,13 +34,13 @@ __END__
 
 DBD::PO - DBI driver for PO files
 
-$Id: PO.pm 399 2009-05-29 19:13:16Z steffenw $
+$Id: PO.pm 412 2009-08-29 08:58:24Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO.pm $
 
 =head1 VERSION
 
-2.07
+2.08
 
 =head1 SYNOPSIS
 
@@ -170,9 +170,9 @@ To use these format flags call
 C<DBD::PO->init(':plural');>
 or C<DBD::PO->init(':all');> early.
 
-=item * msgstr_0 .. msgstr_3
+=item * msgstr_0 .. msgstr_5
 
-Insted of msgstr for plural item 0 .. 3.
+Insted of msgstr for plural item 0 .. 5.
 
 To use these format flags call
 C<DBD::PO->init(':plural');>
@@ -204,7 +204,7 @@ or C<DBD::PO->init(':all');> early.
 
 =back
 
-..._format, msgid_plural, msgstr_0 .. msgstr_3 and previous_...
+..._format, msgid_plural, msgstr_0 .. msgstr_5 and previous_...
 are normally switched off.
 See method init.
 
@@ -224,10 +224,12 @@ See method init.
                 msgstr_0              VARCHAR,
                 msgstr_1              VARCHAR,
                 msgstr_2              VARCHAR,
-                msgstr_3              VARCHAR
+                msgstr_3              VARCHAR,
+                msgstr_4              VARCHAR,
+                msgstr_5              VARCHAR,
                 previous_msgctxt      VARCHAR,
                 previous_msgid        VARCHAR,
-                previous_msgid_plural VARCHAR,
+                previous_msgid_plural VARCHAR
             )
     EOT
 
@@ -267,7 +269,7 @@ Note that the default encoding is nothing, not 'utf-8'.
             charset                     => $po_charset || 'iso-8859-1',
             'Content-Transfer-Encoding' => '8bit',
             # an English/German example
-            'Plural-Forms:              => 'nplurals=2; plural=n != 1;',
+            'Plural-Forms'              => 'nplurals=2; plural=n != 1;',
             # place here pairs for extra parameters
             extended                    => [qw(
                 X-Poedit-Language      German
@@ -642,6 +644,8 @@ L<DBD::CSV> my guideline
 L<http://www.gnu.org/software/gettext/manual/gettext.html>
 
 L<http://en.wikipedia.org/wiki/Gettext>
+
+L<http://translate.sourceforge.net/wiki/l10n/pluralforms>
 
 L<http://rassie.org/archives/247> The choice of the right module for the translation.
 

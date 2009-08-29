@@ -211,6 +211,12 @@ EOT
 "str_plural2"
 
 EOT
+    $po .= <<'EOT';
+msgid "id_value_singular_mini"
+msgid_plural "id_value_plural_mini"
+msgstr[0] ""
+
+EOT
     open my $file, '< :raw', $FILE_0X or croak $OS_ERROR;
     local $INPUT_RECORD_SEPARATOR = ();
     my $content = <$file>;

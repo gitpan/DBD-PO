@@ -1,5 +1,8 @@
 Build.PL
 Changes
+dbd_po_more_tables_1.po
+dbd_po_more_tables_2.po
+dbd_po_test.po
 example/01_write.pl
 example/02_write_plural_po.pl
 example/03_write_plural_mo.pl

@@ -3,7 +3,7 @@ package DBD::PO::Locale::PO;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.21.4');
+use version; our $VERSION = qv('0.21.5');
 
 use Carp qw(croak);
 use English qw(-no_match_vars $EVAL_ERROR $OS_ERROR);
@@ -626,13 +626,13 @@ __END__
 
 DBD::PO::Locale::PO - Perl module for manipulating .po entries from GNU gettext
 
-$Id: PO.pm 387 2009-05-05 20:33:51Z steffenw $
+$Id: PO.pm 412 2009-08-29 08:58:24Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/Locale/PO.pm $
 
 =head1 VERSION
 
-v0.21.4
+v0.21.5
 
 =head1 SYNOPSIS
 
@@ -753,6 +753,8 @@ the strings. eg:
             1 => 'found %d plural translation case 1',
             2 => 'found %d plural translation case 2',
             3 => 'found %d plural translation case 3',
+            4 => 'found %d plural translation case 4',
+            5 => 'found %d plural translation case 5',
         }
     );
 

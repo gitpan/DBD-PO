@@ -9,7 +9,7 @@ use Test::DBD::PO::Defaults qw(
     $PATH $TRACE $SEPARATOR $EOL
     trace_file_name $TABLE_0X $FILE_0X
 );
-use Test::More tests => 14 + 1;
+use Test::More tests => 15 + 1;
 use Test::NoWarnings;
 use Test::Differences;
 
@@ -123,6 +123,14 @@ EO_SQL
     is($result, 1, 'insert row, plural, multi line');
 }
 
+# minimized plural row
+{
+    my $result = $dbh->do(<<"EO_SQL", undef, qw(id_value_singular_mini id_value_plural_mini) );
+        INSERT INTO $TABLE_0X (msgid, msgid_plural) VALUES (?, ?)
+EO_SQL
+    is($result, 1, "insert minimized plural row");
+}
+
 # check table file
 {
     my $po = <<'EOT';
@@ -192,6 +200,10 @@ msgstr[0] ""
 msgstr[1] ""
 "str_plural1\n"
 "str_plural2"
+
+msgid "id_value_singular_mini"
+msgid_plural "id_value_plural_mini"
+msgstr[0] ""
 
 EOT
     open my $file, '< :raw', $FILE_0X or croak $OS_ERROR;

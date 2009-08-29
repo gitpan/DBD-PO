@@ -16,7 +16,7 @@ if ($ENV{MOD_PERL}) {
 local $ENV{LANGUAGE} = 'de_DE';
 
 tie my %__x,  'Tie::Sub', sub { return __x(shift, @_) }; ## no critic (Ties)
-tie my %__nx, 'Tie::Sub', sub { return __nx(shift, @_) }; ## no critic (Ties)
+tie my %__nx, 'Tie::Sub', sub { return __nx(shift, shift, shift, @_) }; ## no critic (Ties)
 
 # write a long text with all the different translatons
 print <<"EOT"; ## no critic (CheckedSyscalls)

@@ -3,7 +3,7 @@ package DBD::PO::Text::PO;
 use strict;
 use warnings;
 
-our $VERSION = '2.00';
+our $VERSION = '2.08';
 
 use Carp qw(croak);
 use English qw(-no_match_vars $OS_ERROR);
@@ -74,10 +74,12 @@ sub init {
             ? (
                 [ qw( msgid_plural -msgid_plural msgid_plural ) ],
                                    # dummy       # dummy
-                [ qw( msgstr_0     -msgstr_0     msgstr_0     ) ], # singular
-                [ qw( msgstr_1     -msgstr_1     msgstr_1     ) ], # plural
+                [ qw( msgstr_0     -msgstr_0     msgstr_0     ) ], # singular or zero
+                [ qw( msgstr_1     -msgstr_1     msgstr_1     ) ], # plural   or singular
                 [ qw( msgstr_2     -msgstr_2     msgstr_2     ) ], # plural
                 [ qw( msgstr_3     -msgstr_3     msgstr_3     ) ], # plural
+                [ qw( msgstr_4     -msgstr_4     msgstr_4     ) ], # plural
+                [ qw( msgstr_5     -msgstr_5     msgstr_5     ) ], # plural
             )
             : ()
         ),
@@ -233,9 +235,9 @@ sub write_entry { ## no critic (ExcessComplexity)
         eol      => $self->{eol},
         '-msgid' => q{},
         (
-            exists $line{'-msgstr_n'}
-            ? ()
-            : ('-msgstr' => q{})
+            exists $line{'-msgid_plural'}
+            ? ('-msgstr_n' => { 0 => q{} })
+            : ('-msgstr'   => q{})
         ),
         %line,
     )->dump();
@@ -347,13 +349,13 @@ __END__
 
 DBD::PO::Text::PO - read or write a PO file entry by entry
 
-$Id: PO.pm 339 2009-03-01 11:53:16Z steffenw $
+$Id: PO.pm 412 2009-08-29 08:58:24Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/Text/PO.pm $
 
 =head1 VERSION
 
-2.00
+2.08
 
 =head1 SYNOPSIS
 

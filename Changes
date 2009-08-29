@@ -1,5 +1,8 @@
 Revision history for Perl extension DBD::PO.
 
+2.08  Sat Aug 29 11::00:00 2009
+- allow 6 plural forms now (Arabic)
+
 2.07  Fri May 29 21::00:00 2009
 - bugfix build dependencies
 
