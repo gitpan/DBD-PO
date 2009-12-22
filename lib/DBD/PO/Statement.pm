@@ -3,7 +3,7 @@ package DBD::PO::Statement;
 use strict;
 use warnings;
 
-our $VERSION = '2.00';
+our $VERSION = '2.09';
 
 use DBD::File;
 use parent qw(-norequire DBD::File::Statement);
@@ -58,7 +58,7 @@ sub open_table { ## no critic (ExcessComplexity)
                              : $dbh->{po_charset}
                                ? $dbh->{po_charset}
                                : undef;
-            if ($po_charset) {
+            if ($po_charset && $tbl->{fh}) {
                 $tbl->{fh}->binmode("encoding($po_charset)")
                     or croak "binmode $OS_ERROR";
             }
@@ -105,13 +105,13 @@ __END__
 
 DBD::PO::Statement - statement class for DBD::File
 
-$Id: Statement.pm 289 2008-11-09 13:10:28Z steffenw $
+$Id: Statement.pm 420 2009-12-22 07:36:43Z steffenw $
 
 $HeadURL: https://dbd-po.svn.sourceforge.net/svnroot/dbd-po/trunk/DBD-PO/lib/DBD/PO/Statement.pm $
 
 =head1 VERSION
 
-2.00
+2.09
 
 =head1 SYNOPSIS
 

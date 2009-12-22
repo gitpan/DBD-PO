@@ -1,5 +1,10 @@
 Revision history for Perl extension DBD::PO.
 
+2.09  Tue Dec 22 08:30:00 2009
+- bugfix binmode in Statement.pm (no select statement first, but drop)
+- remove taint tests because of untainted f_dir in DBD::File
+- make Build.PL ready for PPM and CPAN installer
+
 2.08  Sat Aug 29 11::00:00 2009
 - allow 6 plural forms now (Arabic)
 
