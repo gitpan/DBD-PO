@@ -1,5 +1,8 @@
 Revision history for Perl extension DBD::PO.
 
+2.10  Sun Jan 24 13:14:51 2010
+- https://rt.cpan.org/Ticket/Display.html?id=53120
+
 2.09  Tue Dec 22 08:30:00 2009
 - bugfix binmode in Statement.pm (no select statement first, but drop)
 - remove taint tests because of untainted f_dir in DBD::File
